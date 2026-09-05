@@ -1,4 +1,5 @@
 import { createServerComponentClient } from "@/lib/supabase/server";
+import { PropertyFloorPlanEditor } from "@/components/property-floor-plan-editor";
 import { redirect } from "next/navigation";
 
 export default async function PropertyEditorPage({
@@ -20,13 +21,19 @@ export default async function PropertyEditorPage({
 
   const { data: property } = await supabase
     .from("properties")
-    .select("id, name, address, internal_reference, status")
+    .select("id, name, address, internal_reference, status, floor_plan_url")
     .eq("id", id)
     .maybeSingle();
 
   if (!property) {
     redirect("/properties");
   }
+
+  const { data: zones } = await supabase
+    .from("property_zones")
+    .select("id, name, room_order, x, y, width, height")
+    .eq("property_id", id)
+    .order("room_order", { ascending: true });
 
   return (
     <main className="min-h-screen bg-slate-100 p-6 text-slate-900">
@@ -45,12 +52,11 @@ export default async function PropertyEditorPage({
           </a>
         </div>
 
-        <section className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center shadow-sm">
-          <p className="text-lg font-semibold text-slate-800">Editor de plano</p>
-          <p className="mt-2 text-sm text-slate-500">
-            Aquí se cargará la imagen del plano y las zonas clicables de cada habitación.
-          </p>
-        </section>
+        <PropertyFloorPlanEditor
+          propertyId={property.id}
+          initialFloorPlanUrl={property.floor_plan_url}
+          initialZones={zones ?? []}
+        />
       </div>
     </main>
   );
