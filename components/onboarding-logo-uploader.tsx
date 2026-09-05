@@ -10,7 +10,30 @@ const acceptedTypes = [
   "image/webp",
   "image/svg+xml",
   "image/gif",
-];
+] as const;
+
+function normalizeImageFile(file: File) {
+  const extension = (file.name.split(".").pop() ?? "png").toLowerCase();
+  const extensionMimeMap: Record<string, string> = {
+    png: "image/png",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    webp: "image/webp",
+    svg: "image/svg+xml",
+    gif: "image/gif",
+  };
+
+  const mimeType = acceptedTypes.includes(file.type as (typeof acceptedTypes)[number])
+    ? file.type
+    : extensionMimeMap[extension] ?? "image/png";
+
+  const normalizedFile = new File([file], file.name, {
+    type: mimeType,
+    lastModified: file.lastModified,
+  });
+
+  return normalizedFile;
+}
 
 export function OnboardingLogoUploader() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -21,15 +44,16 @@ export function OnboardingLogoUploader() {
 
   const uploadLogoToSupabase = async (file: File) => {
     const supabase = createClient();
-    const extension = file.name.split(".").pop() ?? "png";
+    const normalizedFile = normalizeImageFile(file);
+    const extension = (normalizedFile.name.split(".").pop() ?? "png").toLowerCase();
     const safeFileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${extension}`;
 
     const { error: uploadError } = await supabase.storage
       .from("logos")
-      .upload(`agency-logos/${safeFileName}`, file, {
+      .upload(`agency-logos/${safeFileName}`, normalizedFile, {
         cacheControl: "3600",
         upsert: false,
-        contentType: file.type,
+        contentType: normalizedFile.type,
       });
 
     if (uploadError) {
@@ -48,17 +72,23 @@ export function OnboardingLogoUploader() {
       return;
     }
 
-    if (!acceptedTypes.includes(file.type)) {
-      alert("Formato de imagen no soportado. Usa PNG, JPG, WEBP, SVG o GIF.");
+    const normalizedFile = normalizeImageFile(file);
+    const allowedMimeTypes = new Set(acceptedTypes);
+    const mimeType = normalizedFile.type || "";
+    const extension = (normalizedFile.name.split(".").pop() ?? "").toLowerCase();
+    const isAllowed = allowedMimeTypes.has(mimeType as (typeof acceptedTypes)[number]) || ["png", "jpg", "jpeg", "webp"].includes(extension);
+
+    if (!isAllowed) {
+      alert("Formato de imagen no soportado. Usa PNG, JPG o WEBP.");
       return;
     }
 
-    setSelectedFile(file);
-    setPreviewUrl(URL.createObjectURL(file));
+    setSelectedFile(normalizedFile);
+    setPreviewUrl(URL.createObjectURL(normalizedFile));
 
     try {
       setIsUploading(true);
-      const publicUrl = await uploadLogoToSupabase(file);
+      const publicUrl = await uploadLogoToSupabase(normalizedFile);
       const hiddenInput = document.querySelector<HTMLInputElement>('input[name="logoUrl"]');
       if (hiddenInput) {
         hiddenInput.value = publicUrl;

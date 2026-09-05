@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createServerComponentClient } from "@/lib/supabase/server";
 
@@ -87,13 +88,22 @@ export async function completeOnboarding(formData: FormData) {
     slug = `${slug}-${Math.random().toString(36).slice(2, 8)}`;
   }
 
-  const { data: agencyId, error: agencyError } = await supabase.rpc("create_agency_for_user", {
+  const rpcPayload = {
     p_name: name,
     p_slug: slug,
     p_logo_url: logoUrl || null,
     p_primary_color: primaryColor || "#0F172A",
     p_secondary_color: secondaryColor || "#F59E0B",
+  };
+
+  console.log("create_agency_for_user payload:", {
+    name,
+    slug,
+    slugGeneratedFromName: slugify(name),
+    ...rpcPayload,
   });
+
+  const { data: agencyId, error: agencyError } = await supabase.rpc("create_agency_for_user", rpcPayload);
 
   if (agencyError || !agencyId) {
     redirect(`/onboarding?error=${encodeURIComponent(agencyError?.message ?? "No+se+puedo+crear+la+agencia")}`);
@@ -129,6 +139,49 @@ export async function saveAgencyProfile(formData: FormData) {
     .maybeSingle();
 
   if (existingMembership?.agency_id) {
+    const { data: existingAgency } = await supabase
+      .from("agencies")
+      .select("id")
+      .eq("id", existingMembership.agency_id)
+      .maybeSingle();
+
+    if (!existingAgency) {
+      let slug = slugify(name);
+      const { data: duplicateAgency } = await supabase
+        .from("agencies")
+        .select("id")
+        .eq("slug", slug)
+        .maybeSingle();
+
+      if (duplicateAgency) {
+        slug = `${slug}-${Math.random().toString(36).slice(2, 8)}`;
+      }
+
+      const rpcPayload = {
+        p_name: name,
+        p_slug: slug,
+        p_logo_url: logoUrl || null,
+        p_primary_color: primaryColor || "#0F172A",
+        p_secondary_color: secondaryColor || "#F59E0B",
+      };
+
+      console.log("create_agency_for_user payload:", {
+        name,
+        slug,
+        slugGeneratedFromName: slugify(name),
+        ...rpcPayload,
+      });
+
+      const { data: agencyId, error: agencyError } = await supabase.rpc("create_agency_for_user", rpcPayload);
+
+      if (agencyError || !agencyId) {
+        redirect(`/dashboard?error=${encodeURIComponent(agencyError?.message ?? "No+se+puedo+crear+la+agencia")}`);
+      }
+
+      revalidatePath("/dashboard");
+      redirect("/dashboard");
+    }
+
     const { error } = await supabase
       .from("agencies")
       .update({
@@ -143,6 +196,7 @@ export async function saveAgencyProfile(formData: FormData) {
       redirect(`/dashboard?error=${encodeURIComponent(error.message)}`);
     }
 
+    revalidatePath("/dashboard");
     redirect("/dashboard");
   }
 
@@ -157,18 +211,28 @@ export async function saveAgencyProfile(formData: FormData) {
     slug = `${slug}-${Math.random().toString(36).slice(2, 8)}`;
   }
 
-  const { data: agencyId, error: agencyError } = await supabase.rpc("create_agency_for_user", {
+  const rpcPayload = {
     p_name: name,
     p_slug: slug,
     p_logo_url: logoUrl || null,
     p_primary_color: primaryColor || "#0F172A",
     p_secondary_color: secondaryColor || "#F59E0B",
+  };
+
+  console.log("create_agency_for_user payload:", {
+    name,
+    slug,
+    slugGeneratedFromName: slugify(name),
+    ...rpcPayload,
   });
+
+  const { data: agencyId, error: agencyError } = await supabase.rpc("create_agency_for_user", rpcPayload);
 
   if (agencyError || !agencyId) {
     redirect(`/dashboard?error=${encodeURIComponent(agencyError?.message ?? "No+se+puedo+crear+la+agencia")}`);
   }
 
+  revalidatePath("/dashboard");
   redirect("/dashboard");
 }
 

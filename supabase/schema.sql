@@ -45,6 +45,20 @@ CREATE TABLE public.agency_members (
   UNIQUE (agency_id, user_id)
 );
 
+CREATE TYPE public.property_status AS ENUM ('draft', 'active', 'inactive', 'archived');
+
+CREATE TABLE public.properties (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  agency_id uuid NOT NULL REFERENCES public.agencies(id) ON DELETE CASCADE,
+  name text NOT NULL,
+  address text NOT NULL,
+  internal_reference text,
+  status public.property_status NOT NULL DEFAULT 'draft',
+  floor_plan_url text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
 CREATE TABLE public.plans (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   code text NOT NULL UNIQUE,
@@ -106,6 +120,9 @@ CREATE INDEX idx_agency_members_user_id
 
 CREATE INDEX idx_agency_members_agency_id
   ON public.agency_members (agency_id);
+
+CREATE INDEX idx_properties_agency_id
+  ON public.properties (agency_id);
 
 CREATE INDEX idx_subscriptions_agency_id
   ON public.subscriptions (agency_id);
@@ -187,6 +204,11 @@ BEFORE UPDATE ON public.agency_members
 FOR EACH ROW
 EXECUTE FUNCTION public.set_updated_at();
 
+CREATE TRIGGER set_properties_updated_at
+BEFORE UPDATE ON public.properties
+FOR EACH ROW
+EXECUTE FUNCTION public.set_updated_at();
+
 CREATE TRIGGER set_plans_updated_at
 BEFORE UPDATE ON public.plans
 FOR EACH ROW
@@ -204,6 +226,7 @@ EXECUTE FUNCTION public.set_updated_at();
 
 ALTER TABLE public.agencies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.agency_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.properties ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.plans ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.usage_periods ENABLE ROW LEVEL SECURITY;
@@ -248,6 +271,27 @@ CREATE POLICY "Agency members can be deleted by managers"
 ON public.agency_members
 FOR DELETE
 USING (public.can_manage_agency(agency_id));
+
+CREATE POLICY "Properties are visible to agency members"
+ON public.properties
+FOR SELECT
+USING (public.is_agency_member(agency_id));
+
+CREATE POLICY "Properties can be created by agency members"
+ON public.properties
+FOR INSERT
+WITH CHECK (public.is_agency_member(agency_id));
+
+CREATE POLICY "Properties can be updated by agency members"
+ON public.properties
+FOR UPDATE
+USING (public.is_agency_member(agency_id))
+WITH CHECK (public.is_agency_member(agency_id));
+
+CREATE POLICY "Properties can be deleted by agency members"
+ON public.properties
+FOR DELETE
+USING (public.is_agency_member(agency_id));
 
 CREATE POLICY "Plans are readable by authenticated users"
 ON public.plans

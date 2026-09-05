@@ -1,8 +1,11 @@
+import Link from "next/link";
 import { Suspense } from "react";
 import { saveAgencyProfile } from "@/app/actions/auth";
 import { OnboardingLogoUploader } from "@/components/onboarding-logo-uploader";
 import { createServerComponentClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+
+export const dynamic = "force-dynamic";
 
 export default async function DashboardPage({
   searchParams,
@@ -140,12 +143,20 @@ export default async function DashboardPage({
               <p className="text-sm text-slate-500">Plan actual</p>
               <p className="mt-1 text-xl font-bold">{plan?.name ?? "Sin plan"}</p>
             </div>
-            <a
-              href="/billing"
-              className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-            >
-              Cambiar plan
-            </a>
+            <div className="flex gap-3">
+              <Link
+                href="/properties"
+                className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-2 text-sm font-medium text-sky-700 transition hover:border-sky-300 hover:bg-sky-100"
+              >
+                Ver propiedades
+              </Link>
+              <a
+                href="/billing"
+                className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+              >
+                Cambiar plan
+              </a>
+            </div>
           </div>
         </section>
 
