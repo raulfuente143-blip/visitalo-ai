@@ -96,13 +96,6 @@ export async function completeOnboarding(formData: FormData) {
     p_secondary_color: secondaryColor || "#F59E0B",
   };
 
-  console.log("create_agency_for_user payload:", {
-    name,
-    slug,
-    slugGeneratedFromName: slugify(name),
-    ...rpcPayload,
-  });
-
   const { data: agencyId, error: agencyError } = await supabase.rpc("create_agency_for_user", rpcPayload);
 
   if (agencyError || !agencyId) {
@@ -165,13 +158,6 @@ export async function saveAgencyProfile(formData: FormData) {
         p_secondary_color: secondaryColor || "#F59E0B",
       };
 
-      console.log("create_agency_for_user payload:", {
-        name,
-        slug,
-        slugGeneratedFromName: slugify(name),
-        ...rpcPayload,
-      });
-
       const { data: agencyId, error: agencyError } = await supabase.rpc("create_agency_for_user", rpcPayload);
 
       if (agencyError || !agencyId) {
@@ -218,13 +204,6 @@ export async function saveAgencyProfile(formData: FormData) {
     p_primary_color: primaryColor || "#0F172A",
     p_secondary_color: secondaryColor || "#F59E0B",
   };
-
-  console.log("create_agency_for_user payload:", {
-    name,
-    slug,
-    slugGeneratedFromName: slugify(name),
-    ...rpcPayload,
-  });
 
   const { data: agencyId, error: agencyError } = await supabase.rpc("create_agency_for_user", rpcPayload);
 

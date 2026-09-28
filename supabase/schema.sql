@@ -17,6 +17,7 @@ CREATE TYPE public.subscription_status AS ENUM (
 CREATE OR REPLACE FUNCTION public.set_updated_at()
 RETURNS TRIGGER
 LANGUAGE plpgsql
+SET search_path = public
 AS $$
 BEGIN
   NEW.updated_at = NOW();
@@ -57,6 +58,29 @@ CREATE TABLE public.properties (
   floor_plan_url text,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE public.property_zones (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  property_id uuid NOT NULL REFERENCES public.properties(id) ON DELETE CASCADE,
+  name text NOT NULL,
+  room_order integer NOT NULL CHECK (room_order > 0),
+  x numeric(6,2) NOT NULL DEFAULT 0,
+  y numeric(6,2) NOT NULL DEFAULT 0,
+  width numeric(6,2) NOT NULL DEFAULT 9,
+  height numeric(6,2) NOT NULL DEFAULT 7,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (property_id, room_order)
+);
+
+CREATE TABLE public.property_zone_photos (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  zone_id uuid NOT NULL REFERENCES public.property_zones(id) ON DELETE CASCADE,
+  url text NOT NULL,
+  photo_slot integer NOT NULL CHECK (photo_slot IN (1, 2)),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (zone_id, photo_slot)
 );
 
 CREATE TABLE public.plans (
@@ -124,6 +148,12 @@ CREATE INDEX idx_agency_members_agency_id
 CREATE INDEX idx_properties_agency_id
   ON public.properties (agency_id);
 
+CREATE INDEX idx_property_zones_property_id
+  ON public.property_zones (property_id);
+
+CREATE INDEX idx_property_zone_photos_zone_id
+  ON public.property_zone_photos (zone_id);
+
 CREATE INDEX idx_subscriptions_agency_id
   ON public.subscriptions (agency_id);
 
@@ -164,6 +194,23 @@ AS $$
   );
 $$;
 
+CREATE OR REPLACE FUNCTION public.can_access_property_zone(p_zone_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.property_zones z
+    JOIN public.properties p ON p.id = z.property_id
+    JOIN public.agency_members am ON am.agency_id = p.agency_id
+    WHERE z.id = p_zone_id
+      AND am.user_id = auth.uid()
+  );
+$$;
+
 CREATE OR REPLACE FUNCTION public.create_agency_for_user(
   p_name text,
   p_slug text,
@@ -194,6 +241,12 @@ BEGIN
 END;
 $$;
 
+REVOKE EXECUTE ON FUNCTION public.can_access_property_zone(uuid) FROM anon;
+REVOKE EXECUTE ON FUNCTION public.can_manage_agency(uuid) FROM anon;
+REVOKE EXECUTE ON FUNCTION public.create_agency_for_user(text, text, text, text, text) FROM anon;
+REVOKE EXECUTE ON FUNCTION public.is_agency_member(uuid) FROM anon;
+REVOKE EXECUTE ON FUNCTION public.rls_auto_enable() FROM anon;
+
 CREATE TRIGGER set_agencies_updated_at
 BEFORE UPDATE ON public.agencies
 FOR EACH ROW
@@ -206,6 +259,11 @@ EXECUTE FUNCTION public.set_updated_at();
 
 CREATE TRIGGER set_properties_updated_at
 BEFORE UPDATE ON public.properties
+FOR EACH ROW
+EXECUTE FUNCTION public.set_updated_at();
+
+CREATE TRIGGER set_property_zones_updated_at
+BEFORE UPDATE ON public.property_zones
 FOR EACH ROW
 EXECUTE FUNCTION public.set_updated_at();
 
@@ -227,6 +285,8 @@ EXECUTE FUNCTION public.set_updated_at();
 ALTER TABLE public.agencies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.agency_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.properties ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.property_zones ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.property_zone_photos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.plans ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.usage_periods ENABLE ROW LEVEL SECURITY;
@@ -292,6 +352,112 @@ CREATE POLICY "Properties can be deleted by agency members"
 ON public.properties
 FOR DELETE
 USING (public.is_agency_member(agency_id));
+
+CREATE POLICY "Property zones are visible to agency members"
+ON public.property_zones
+FOR SELECT
+USING (
+  EXISTS (
+    SELECT 1
+    FROM public.properties p
+    WHERE p.id = property_zones.property_id
+      AND public.is_agency_member(p.agency_id)
+  )
+);
+
+CREATE POLICY "Property zones can be managed by agency members"
+ON public.property_zones
+FOR ALL
+USING (
+  EXISTS (
+    SELECT 1
+    FROM public.properties p
+    WHERE p.id = property_zones.property_id
+      AND public.is_agency_member(p.agency_id)
+  )
+)
+WITH CHECK (
+  EXISTS (
+    SELECT 1
+    FROM public.properties p
+    WHERE p.id = property_zones.property_id
+      AND public.is_agency_member(p.agency_id)
+  )
+);
+
+DROP POLICY IF EXISTS "Property zone photos are visible to agency members" ON public.property_zone_photos;
+DROP POLICY IF EXISTS "Property zone photos can be managed by agency members" ON public.property_zone_photos;
+DROP POLICY IF EXISTS "Property zone photos can be inserted by agency members" ON public.property_zone_photos;
+DROP POLICY IF EXISTS "Property zone photos can be updated by agency members" ON public.property_zone_photos;
+DROP POLICY IF EXISTS "Property zone photos can be deleted by agency members" ON public.property_zone_photos;
+
+CREATE POLICY "Property zone photos are visible to agency members"
+ON public.property_zone_photos
+FOR SELECT
+USING (
+  EXISTS (
+    SELECT 1
+    FROM public.property_zones z
+    JOIN public.properties p ON p.id = z.property_id
+    JOIN public.agency_members am ON am.agency_id = p.agency_id
+    WHERE z.id = property_zone_photos.zone_id
+      AND am.user_id = auth.uid()
+  )
+);
+
+CREATE POLICY "Property zone photos can be inserted by agency members"
+ON public.property_zone_photos
+FOR INSERT
+WITH CHECK (
+  auth.uid() IS NOT NULL
+  AND EXISTS (
+    SELECT 1
+    FROM public.property_zones z
+    JOIN public.properties p ON p.id = z.property_id
+    JOIN public.agency_members am ON am.agency_id = p.agency_id
+    WHERE z.id = property_zone_photos.zone_id
+      AND am.user_id = auth.uid()
+  )
+);
+
+CREATE POLICY "Property zone photos can be updated by agency members"
+ON public.property_zone_photos
+FOR UPDATE
+USING (
+  EXISTS (
+    SELECT 1
+    FROM public.property_zones z
+    JOIN public.properties p ON p.id = z.property_id
+    JOIN public.agency_members am ON am.agency_id = p.agency_id
+    WHERE z.id = property_zone_photos.zone_id
+      AND am.user_id = auth.uid()
+  )
+)
+WITH CHECK (
+  auth.uid() IS NOT NULL
+  AND EXISTS (
+    SELECT 1
+    FROM public.property_zones z
+    JOIN public.properties p ON p.id = z.property_id
+    JOIN public.agency_members am ON am.agency_id = p.agency_id
+    WHERE z.id = property_zone_photos.zone_id
+      AND am.user_id = auth.uid()
+  )
+);
+
+CREATE POLICY "Property zone photos can be deleted by agency members"
+ON public.property_zone_photos
+FOR DELETE
+USING (
+  EXISTS (
+    SELECT 1
+    FROM public.property_zones z
+    JOIN public.properties p ON p.id = z.property_id
+    JOIN public.agency_members am ON am.agency_id = p.agency_id
+    WHERE z.id = property_zone_photos.zone_id
+      AND am.user_id = auth.uid()
+  )
+);
 
 CREATE POLICY "Plans are readable by authenticated users"
 ON public.plans

@@ -1,5 +1,6 @@
 import { createServerComponentClient } from "@/lib/supabase/server";
 import { PropertyFloorPlanEditor } from "@/components/property-floor-plan-editor";
+import { PropertyZonePhotos } from "@/components/property-zone-photos";
 import { redirect } from "next/navigation";
 
 export default async function PropertyEditorPage({
@@ -31,9 +32,23 @@ export default async function PropertyEditorPage({
 
   const { data: zones } = await supabase
     .from("property_zones")
-    .select("id, name, room_order, x, y, width, height")
+    .select("id, property_id, name, room_order, points")
     .eq("property_id", id)
     .order("room_order", { ascending: true });
+
+  const zoneIds = (zones ?? []).map((zone) => zone.id);
+  const { data: zonePhotos } = zoneIds.length
+    ? await supabase
+        .from("property_zone_photos")
+        .select("id, zone_id, photo_slot, url")
+        .in("zone_id", zoneIds)
+        .order("photo_slot", { ascending: true })
+    : { data: [] };
+
+  const zonesWithPhotos = (zones ?? []).map((zone) => ({
+    ...zone,
+    photos: (zonePhotos ?? []).filter((photo) => photo.zone_id === zone.id),
+  }));
 
   return (
     <main className="min-h-screen bg-slate-100 p-6 text-slate-900">
@@ -55,7 +70,7 @@ export default async function PropertyEditorPage({
         <PropertyFloorPlanEditor
           propertyId={property.id}
           initialFloorPlanUrl={property.floor_plan_url}
-          initialZones={zones ?? []}
+          initialZones={zonesWithPhotos}
         />
       </div>
     </main>

@@ -1,4 +1,5 @@
 import { createServerComponentClient } from "@/lib/supabase/server";
+import { DeletePropertyButton } from "@/components/delete-property-button";
 import { redirect } from "next/navigation";
 
 const statusStyles: Record<string, string> = {
@@ -62,12 +63,17 @@ export default async function PropertiesPage() {
                     <th className="px-4 py-3 font-semibold text-slate-700">Dirección</th>
                     <th className="px-4 py-3 font-semibold text-slate-700">Referencia</th>
                     <th className="px-4 py-3 font-semibold text-slate-700">Estado</th>
+                    <th className="px-4 py-3 font-semibold text-slate-700">Acción</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 bg-white">
                   {properties.map((property) => (
                     <tr key={property.id} className="hover:bg-slate-50">
-                      <td className="px-4 py-4 font-medium text-slate-900">{property.name}</td>
+                      <td className="px-4 py-4 font-medium text-slate-900">
+                        <a href={`/properties/${property.id}/editor`} className="text-sky-700 hover:underline">
+                          {property.name}
+                        </a>
+                      </td>
                       <td className="px-4 py-4 text-slate-600">{property.address}</td>
                       <td className="px-4 py-4 text-slate-500">
                         {property.internal_reference ?? "—"}
@@ -78,6 +84,17 @@ export default async function PropertiesPage() {
                         >
                           {property.status}
                         </span>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="flex items-center gap-2">
+                          <a
+                            href={`/properties/${property.id}/editor`}
+                            className="inline-flex rounded-lg bg-sky-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-sky-500"
+                          >
+                            Abrir editor
+                          </a>
+                          <DeletePropertyButton propertyId={property.id} />
+                        </div>
                       </td>
                     </tr>
                   ))}

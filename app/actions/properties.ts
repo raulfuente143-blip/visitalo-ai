@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { createServerComponentClient } from "@/lib/supabase/server";
 
 export async function createProperty(formData: FormData) {
@@ -51,4 +52,18 @@ export async function createProperty(formData: FormData) {
   }
 
   redirect(`/properties/${data.id}/editor`);
+}
+
+export async function deleteProperty(propertyId: string) {
+  const supabase = await createServerComponentClient();
+  const { error } = await supabase
+    .from("properties")
+    .delete()
+    .eq("id", propertyId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/properties");
 }
