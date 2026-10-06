@@ -1,24 +1,20 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Stage, Layer, Line, Circle, Text, Group } from "react-konva";
-import { createPropertyZone, deletePropertyZone, saveFloorPlan, updatePropertyZone } from "@/app/actions/property-editor";
+import dynamic from "next/dynamic";
+import {
+  createPropertyZone,
+  deletePropertyZone,
+  saveFloorPlan,
+  updatePropertyZone,
+} from "@/app/actions/property-editor";
 import { createClient } from "@/lib/supabase/client";
 import { PropertyZonePhotos } from "@/components/property-zone-photos";
+import type { FloorPlanZone } from "@/components/floor-plan-canvas";
 
-type Zone = {
-  id: string;
-  property_id: string;
-  name: string;
-  room_order: number;
-  points: number[];
-  photos?: {
-    id: string;
-    zone_id: string;
-    photo_slot: 1 | 2;
-    url: string;
-  }[];
-};
+const FloorPlanCanvas = dynamic(() => import("@/components/floor-plan-canvas"), { ssr: false });
+
+type Zone = FloorPlanZone;
 
 type PropertyFloorPlanEditorProps = {
   propertyId: string;
@@ -31,7 +27,7 @@ const STAGE_HEIGHT = 700;
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
 const normalizePoints = (points?: number[]) => {
-  if (!points || points.length !== 8) {
+  if (!points || points.length < 6 || points.length % 2 !== 0) {
     return [160, 160, 360, 160, 360, 260, 160, 260];
   }
 
@@ -41,16 +37,12 @@ const normalizePoints = (points?: number[]) => {
 const createDefaultPolygonPoints = (pointerX: number, pointerY: number) => {
   const halfWidth = 80;
   const halfHeight = 55;
-  const x1 = clamp(pointerX - halfWidth, 0, STAGE_WIDTH);
-  const y1 = clamp(pointerY - halfHeight, 0, STAGE_HEIGHT);
-  const x2 = clamp(pointerX + halfWidth, 0, STAGE_WIDTH);
-  const y2 = clamp(pointerY - halfHeight, 0, STAGE_HEIGHT);
-  const x3 = clamp(pointerX + halfWidth, 0, STAGE_WIDTH);
-  const y3 = clamp(pointerY + halfHeight, 0, STAGE_HEIGHT);
-  const x4 = clamp(pointerX - halfWidth, 0, STAGE_WIDTH);
-  const y4 = clamp(pointerY + halfHeight, 0, STAGE_HEIGHT);
-
-  return [x1, y1, x2, y2, x3, y3, x4, y4];
+  return [
+    clamp(pointerX - halfWidth, 0, STAGE_WIDTH), clamp(pointerY - halfHeight, 0, STAGE_HEIGHT),
+    clamp(pointerX + halfWidth, 0, STAGE_WIDTH), clamp(pointerY - halfHeight, 0, STAGE_HEIGHT),
+    clamp(pointerX + halfWidth, 0, STAGE_WIDTH), clamp(pointerY + halfHeight, 0, STAGE_HEIGHT),
+    clamp(pointerX - halfWidth, 0, STAGE_WIDTH), clamp(pointerY + halfHeight, 0, STAGE_HEIGHT),
+  ];
 };
 
 export function PropertyFloorPlanEditor({
@@ -59,14 +51,12 @@ export function PropertyFloorPlanEditor({
   initialZones,
 }: PropertyFloorPlanEditorProps) {
   const imageInputRef = useRef<HTMLInputElement | null>(null);
-  const stageRef = useRef<any>(null);
-
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [size, setSize] = useState({ width: 0, height: 0 });
   const [floorPlanUrl, setFloorPlanUrl] = useState(initialFloorPlanUrl);
+  const [planImage, setPlanImage] = useState<HTMLImageElement | null>(null);
   const [zones, setZones] = useState<Zone[]>(
-    initialZones.map((zone) => ({
-      ...zone,
-      points: normalizePoints(zone.points),
-    })),
+    initialZones.map((zone) => ({ ...zone, points: normalizePoints(zone.points) })),
   );
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
   const [editingZoneId, setEditingZoneId] = useState<string | null>(null);
@@ -74,20 +64,51 @@ export function PropertyFloorPlanEditor({
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  const persistZoneGeometry = async (zoneId: string, updates: Partial<Zone>) => {
-    const zoneToPersist = zones.find((zone) => zone.id === zoneId);
-    if (!zoneToPersist) return;
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
 
-    try {
-      const updatedZone = await updatePropertyZone(propertyId, zoneId, {
-        name: updates.name ?? zoneToPersist.name,
-        roomOrder: updates.room_order ?? zoneToPersist.room_order,
-        points: updates.points ?? zoneToPersist.points,
+    const observer = new ResizeObserver(([entry]) => {
+      setSize({
+        width: entry.contentRect.width,
+        height: entry.contentRect.height,
       });
+    });
 
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [floorPlanUrl]);
+
+  useEffect(() => {
+    if (!floorPlanUrl) {
+      setPlanImage(null);
+      return;
+    }
+
+    let cancelled = false;
+    const image = new window.Image();
+    image.crossOrigin = "anonymous";
+    image.onload = () => {
+      if (!cancelled) setPlanImage(image);
+    };
+    image.onerror = () => {
+      if (!cancelled) setError("No se pudo cargar la imagen del plano.");
+    };
+    image.src = floorPlanUrl;
+
+    return () => {
+      cancelled = true;
+      image.onload = null;
+      image.onerror = null;
+    };
+  }, [floorPlanUrl]);
+
+  const persistZonePoints = async (zoneId: string, points: number[]) => {
+    try {
+      const updatedZone = await updatePropertyZone(propertyId, zoneId, { points });
       setZones((currentZones) =>
-        currentZones.map((currentZone) =>
-          currentZone.id === zoneId ? { ...currentZone, ...updatedZone, photos: currentZone.photos } : currentZone,
+        currentZones.map((zone) =>
+          zone.id === zoneId ? { ...zone, ...updatedZone, photos: zone.photos } : zone,
         ),
       );
       setMessage("Zona guardada.");
@@ -96,16 +117,10 @@ export function PropertyFloorPlanEditor({
     }
   };
 
-  const updateZonePoints = async (zoneId: string, nextPoints: number[]) => {
+  const updateZonePointsLocally = (zoneId: string, points: number[]) => {
     setZones((currentZones) =>
-      currentZones.map((zone) =>
-        zone.id === zoneId ? { ...zone, points: nextPoints } : zone,
-      ),
+      currentZones.map((zone) => (zone.id === zoneId ? { ...zone, points } : zone)),
     );
-
-    await persistZoneGeometry(zoneId, {
-      points: nextPoints,
-    });
   };
 
   const uploadFloorPlan = async (file: File) => {
@@ -124,16 +139,10 @@ export function PropertyFloorPlanEditor({
       upsert: false,
     });
 
-    if (uploadError) {
-      throw new Error(uploadError.message);
-    }
+    if (uploadError) throw new Error(uploadError.message);
 
     const { data } = supabase.storage.from("floor-plans").getPublicUrl(path);
-
-    if (!data?.publicUrl) {
-      throw new Error("No se pudo obtener la URL pública del plano.");
-    }
-
+    if (!data?.publicUrl) throw new Error("No se pudo obtener la URL pública del plano.");
     return data.publicUrl;
   };
 
@@ -156,37 +165,41 @@ export function PropertyFloorPlanEditor({
     }
   };
 
-  const handleStageMouseDown = async (event: any) => {
-    const stage = event.target.getStage();
-    if (event.target !== stage) {
-      return;
-    }
-
+  const handleCanvasStageClick = async (pointerX: number, pointerY: number, currentZoneCount: number) => {
     setSelectedZoneId(null);
     setEditingZoneId(null);
-
     if (!floorPlanUrl) return;
 
-    const pointer = stage.getPointerPosition();
-    if (!pointer) {
-      return;
-    }
-
-    const nextPoints = createDefaultPolygonPoints(pointer.x, pointer.y);
-    const nextZone = {
-      name: `Habitación ${zones.length + 1}`,
-      roomOrder: zones.length + 1,
-      points: nextPoints,
-    };
+    const newPoints = createDefaultPolygonPoints(pointerX, pointerY);
+    const name = `Habitación ${currentZoneCount + 1}`;
+    const roomOrder = currentZoneCount + 1;
+    const tempId = `temp-${Date.now()}`;
+    setZones((prev) => [
+      ...prev,
+      {
+        id: tempId,
+        property_id: propertyId,
+        name,
+        points: newPoints,
+        room_order: roomOrder,
+        photos: [],
+      },
+    ]);
+    setSelectedZoneId(tempId);
 
     try {
       setError("");
-      const createdZone = await createPropertyZone(propertyId, nextZone);
-      const nextState = { ...createdZone, photos: [] };
-      setZones((currentZones) => [...currentZones, nextState]);
-      setSelectedZoneId(createdZone.id);
+      const created = await createPropertyZone(propertyId, {
+        name,
+        roomOrder,
+        points: newPoints,
+      });
+      setZones((prev) => prev.map((zone) => zone.id === tempId ? { ...created, points: newPoints, photos: [] } : zone));
+      setSelectedZoneId((currentId) => currentId === tempId ? created.id : currentId);
       setMessage("Nueva zona creada.");
     } catch (zoneError) {
+      setZones((prev) => prev.filter((zone) => zone.id !== tempId));
+      setSelectedZoneId((currentId) => currentId === tempId ? null : currentId);
       setError(zoneError instanceof Error ? zoneError.message : "No se pudo crear la zona.");
     }
   };
@@ -196,17 +209,17 @@ export function PropertyFloorPlanEditor({
     if (!trimmedName) return;
 
     setError("");
-
     try {
       const updatedZone = await updatePropertyZone(propertyId, zone.id, {
         name: trimmedName,
         roomOrder: zone.room_order,
         points: zone.points,
       });
-
       setZones((currentZones) =>
         currentZones.map((currentZone) =>
-          currentZone.id === zone.id ? { ...updatedZone, photos: currentZone.photos, name: trimmedName } : currentZone,
+          currentZone.id === zone.id
+            ? { ...currentZone, ...updatedZone, photos: currentZone.photos, name: trimmedName }
+            : currentZone,
         ),
       );
       setMessage("Zona actualizada.");
@@ -224,11 +237,22 @@ export function PropertyFloorPlanEditor({
           .filter((zone) => zone.id !== zoneId)
           .map((zone, index) => ({ ...zone, room_order: index + 1 })),
       );
-      setSelectedZoneId((currentSelected) => (currentSelected === zoneId ? null : currentSelected));
+      setSelectedZoneId((currentId) => (currentId === zoneId ? null : currentId));
+      setEditingZoneId((currentId) => (currentId === zoneId ? null : currentId));
       setMessage("Zona eliminada. El orden se recalcula automáticamente.");
     } catch (zoneError) {
       setError(zoneError instanceof Error ? zoneError.message : "No se pudo eliminar la zona.");
     }
+  };
+
+  const handleZoneSelect = (zoneId: string) => {
+    setSelectedZoneId(zoneId);
+    setEditingZoneId(null);
+  };
+
+  const handleZoneEdit = (zoneId: string) => {
+    setSelectedZoneId(zoneId);
+    setEditingZoneId(zoneId);
   };
 
   return (
@@ -238,7 +262,7 @@ export function PropertyFloorPlanEditor({
           <div>
             <h2 className="text-xl font-bold text-slate-900">Plano de la propiedad</h2>
             <p className="mt-1 text-sm text-slate-500">
-              Sube el plano y haz clic sobre cualquier punto para crear una habitación. Luego arrástrala y redimensiónala con el control de la esquina.
+              Sube el plano y haz clic en un punto para crear una zona. Selecciónala para moverla o haz doble clic para editar sus vértices.
             </p>
           </div>
           <button
@@ -259,139 +283,26 @@ export function PropertyFloorPlanEditor({
         </div>
 
         {floorPlanUrl ? (
-          <div className="relative mt-6 overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
-            <div className="relative w-full" style={{ aspectRatio: `${STAGE_WIDTH} / ${STAGE_HEIGHT}` }}>
-              <img
-                src={floorPlanUrl}
-                alt="Plano de la propiedad"
-                className="pointer-events-none absolute inset-0 h-full w-full object-contain"
-              />
-              <Stage
-                ref={stageRef}
-                width={STAGE_WIDTH}
-                height={STAGE_HEIGHT}
-                style={{ width: "100%", height: "100%" }}
-                onMouseDown={handleStageMouseDown}
-              >
-                <Layer>
-                  {zones.map((zone) => {
-                    const points = normalizePoints(zone.points);
-                    const isSelected = selectedZoneId === zone.id;
-                    const isEditing = editingZoneId === zone.id;
-                    const centerX = points.reduce((sum, point, index) => (index % 2 === 0 ? sum + point : sum), 0) / 4;
-                    const centerY = points.reduce((sum, point, index) => (index % 2 === 1 ? sum + point : sum), 0) / 4;
-
-                    return (
-                      <Group key={zone.id}>
-                        <Line
-                          points={points}
-                          closed
-                          perfectDrawEnabled={false}
-                          draggable={isSelected && !isEditing}
-                          listening={!isEditing}
-                          fill={isSelected ? "rgba(14,165,233,0.28)" : "rgba(14,165,233,0.16)"}
-                          stroke="#0284c7"
-                          strokeWidth={isSelected ? 3 : 2}
-                          onMouseDown={(event) => {
-                            event.cancelBubble = true;
-                            setSelectedZoneId(zone.id);
-                            setEditingZoneId(null);
-                          }}
-                          onDblClick={(event) => {
-                            event.cancelBubble = true;
-                            setSelectedZoneId(zone.id);
-                            setEditingZoneId(zone.id);
-                          }}
-                          onDragEnd={(event) => {
-                            const offsetX = event.target.x();
-                            const offsetY = event.target.y();
-                            const nextPoints = points.map((point, index) =>
-                              index % 2 === 0 ? point + offsetX : point + offsetY,
-                            );
-                            event.target.position({ x: 0, y: 0 });
-                            void updateZonePoints(zone.id, nextPoints);
-                          }}
-                        />
-
-                        {isEditing &&
-                          points.map((point, index) => {
-                            if (index % 2 !== 0) return null;
-
-                            const x = point;
-                            const y = points[index + 1];
-
-                            return (
-                              <Circle
-                                key={`${zone.id}-anchor-${index}`}
-                                x={x}
-                                y={y}
-                                radius={7}
-                                fill="#fff"
-                                stroke="#0284c7"
-                                strokeWidth={2}
-                                draggable={true}
-                                onDragStart={(event) => {
-                                  event.cancelBubble = true;
-                                }}
-                                onDragEnd={(event) => {
-                                  const node = event.target;
-                                  const nextPoints = [...points];
-                                  nextPoints[index] = clamp(node.x(), 0, STAGE_WIDTH);
-                                  nextPoints[index + 1] = clamp(node.y(), 0, STAGE_HEIGHT);
-                                  void updateZonePoints(zone.id, nextPoints);
-                                }}
-                              />
-                            );
-                          })}
-
-                        {isEditing &&
-                          points.map((point, index) => {
-                            if (index % 2 !== 0) return null;
-
-                            const currentX = point;
-                            const currentY = points[index + 1];
-                            const nextIndex = (index + 2) % points.length;
-                            const nextX = points[nextIndex];
-                            const nextY = points[nextIndex + 1] ?? points[1];
-                            const midX = (currentX + nextX) / 2;
-                            const midY = (currentY + nextY) / 2;
-
-                            return (
-                              <Circle
-                                key={`${zone.id}-mid-${index}`}
-                                x={midX}
-                                y={midY}
-                                radius={5}
-                                fill="rgba(14,165,233,0.35)"
-                                stroke="#0284c7"
-                                strokeWidth={1}
-                                draggable={true}
-                                onDragStart={(event) => {
-                                  event.cancelBubble = true;
-                                  const nextPoints = [...points];
-                                  nextPoints.splice(index + 2, 0, midX, midY);
-                                  void updateZonePoints(zone.id, nextPoints);
-                                }}
-                              />
-                            );
-                          })}
-
-                        <Text
-                          x={centerX}
-                          y={centerY}
-                          text={zone.name}
-                          fontSize={18}
-                          fontStyle="600"
-                          fill="#0f172a"
-                          offsetX={50}
-                          offsetY={10}
-                          pointerEvents="none"
-                        />
-                      </Group>
-                    );
-                  })}
-                </Layer>
-              </Stage>
+          <div className="mt-6 overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
+            <div
+              ref={containerRef}
+              className="relative w-full"
+              style={{ aspectRatio: `${STAGE_WIDTH} / ${STAGE_HEIGHT}` }}
+            >
+              {size.width > 0 && size.height > 0 ? (
+                <FloorPlanCanvas
+                  size={size}
+                  planImage={planImage}
+                  zones={zones}
+                  selectedZoneId={selectedZoneId}
+                  editingZoneId={editingZoneId}
+                  onStageClick={handleCanvasStageClick}
+                  onSelectZone={handleZoneSelect}
+                  onEditZone={handleZoneEdit}
+                  onZonePointsChange={updateZonePointsLocally}
+                  onUpdateZonePoints={persistZonePoints}
+                />
+              ) : null}
             </div>
           </div>
         ) : (
@@ -421,12 +332,7 @@ export function PropertyFloorPlanEditor({
               {[...zones]
                 .sort((first, second) => first.room_order - second.room_order)
                 .map((zone) => (
-                  <ZoneEditor
-                    key={zone.id}
-                    zone={zone}
-                    onSave={handleZoneUpdate}
-                    onDelete={handleZoneDelete}
-                  />
+                  <ZoneEditor key={zone.id} zone={zone} onSave={handleZoneUpdate} onDelete={handleZoneDelete} />
                 ))}
             </div>
           ) : (
@@ -488,11 +394,7 @@ function ZoneEditor({
         </button>
       </div>
       <div className="md:col-span-3">
-        <PropertyZonePhotos
-          propertyId={zone.property_id}
-          zoneId={zone.id}
-          photos={zone.photos ?? []}
-        />
+        <PropertyZonePhotos propertyId={zone.property_id} zoneId={zone.id} photos={zone.photos ?? []} />
       </div>
     </div>
   );
