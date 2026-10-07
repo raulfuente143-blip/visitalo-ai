@@ -40,6 +40,7 @@ export function OnboardingLogoUploader() {
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [logoUrl, setLogoUrl] = useState("");
   const [isUploading, setIsUploading] = useState(false);
 
   const uploadLogoToSupabase = async (file: File) => {
@@ -89,10 +90,7 @@ export function OnboardingLogoUploader() {
     try {
       setIsUploading(true);
       const publicUrl = await uploadLogoToSupabase(normalizedFile);
-      const hiddenInput = document.querySelector<HTMLInputElement>('input[name="logoUrl"]');
-      if (hiddenInput) {
-        hiddenInput.value = publicUrl;
-      }
+      setLogoUrl(publicUrl);
     } catch (error) {
       alert((error as Error).message);
     } finally {
@@ -162,7 +160,7 @@ export function OnboardingLogoUploader() {
           name="logoFile"
           onChange={(event) => handleFileSelection(event.target.files?.[0])}
         />
-        <input type="hidden" name="logoUrl" value="" />
+        <input type="hidden" name="logoUrl" value={logoUrl} />
       </div>
 
       {selectedFile ? (

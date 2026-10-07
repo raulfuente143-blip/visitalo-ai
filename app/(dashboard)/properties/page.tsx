@@ -93,6 +93,12 @@ export default async function PropertiesPage() {
                           >
                             Abrir editor
                           </a>
+                          <a
+                            href={`/properties/${property.id}/video`}
+                            className="inline-flex rounded-lg bg-violet-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-violet-500"
+                          >
+                            Crear video
+                          </a>
                           <DeletePropertyButton propertyId={property.id} />
                         </div>
                       </td>
