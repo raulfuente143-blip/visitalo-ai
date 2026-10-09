@@ -1,6 +1,7 @@
 import { createServerComponentClient } from "@/lib/supabase/server";
 import { PropertyFloorPlanEditor } from "@/components/property-floor-plan-editor";
 import { PropertyZonePhotos } from "@/components/property-zone-photos";
+import { Breadcrumb } from "@/components/breadcrumb";
 import { redirect } from "next/navigation";
 
 export default async function PropertyEditorPage({
@@ -51,28 +52,32 @@ export default async function PropertyEditorPage({
   }));
 
   return (
-    <main className="min-h-screen bg-slate-100 p-6 text-slate-900">
-      <div className="mx-auto max-w-5xl">
-        <div className="mb-8 flex items-center justify-between gap-4">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-sky-600">Editor</p>
-            <h1 className="mt-2 text-3xl font-bold">{property.name}</h1>
-            <p className="mt-2 text-sm text-slate-500">{property.address}</p>
-          </div>
-          <a
-            href="/properties"
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-          >
-            Volver a propiedades
-          </a>
+    <div className="mx-auto max-w-7xl text-[#111827]">
+      <Breadcrumb
+        items={[
+          { label: "Propiedades", href: "/properties" },
+          { label: property.name, href: `/properties/${property.id}/editor` },
+          { label: "Editor", href: `/properties/${property.id}/editor` },
+        ]}
+      />
+      <div className="mb-6 flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">{property.name}</h1>
+          <p className="mt-1 text-sm text-[#6B7280]">{property.address}</p>
         </div>
-
-        <PropertyFloorPlanEditor
-          propertyId={property.id}
-          initialFloorPlanUrl={property.floor_plan_url}
-          initialZones={zonesWithPhotos}
-        />
+        <a
+          href="/properties"
+          className="rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm font-medium text-[#111827] transition hover:bg-[#F9FAFB]"
+        >
+          Volver a propiedades
+        </a>
       </div>
-    </main>
+
+      <PropertyFloorPlanEditor
+        propertyId={property.id}
+        initialFloorPlanUrl={property.floor_plan_url}
+        initialZones={zonesWithPhotos}
+      />
+    </div>
   );
 }

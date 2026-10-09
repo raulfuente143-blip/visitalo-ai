@@ -256,8 +256,8 @@ export function PropertyFloorPlanEditor({
   };
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div className="grid items-start gap-6 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+      <section className="min-w-0 rounded-xl bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h2 className="text-xl font-bold text-slate-900">Plano de la propiedad</h2>
@@ -269,7 +269,7 @@ export function PropertyFloorPlanEditor({
             type="button"
             onClick={() => imageInputRef.current?.click()}
             disabled={isUploading}
-            className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-lg border border-[#E5E7EB] px-4 py-2.5 text-sm font-medium text-[#111827] transition hover:bg-[#F9FAFB] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isUploading ? "Subiendo..." : floorPlanUrl ? "Cambiar plano" : "Subir plano"}
           </button>
@@ -314,7 +314,7 @@ export function PropertyFloorPlanEditor({
       </section>
 
       {floorPlanUrl ? (
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <section className="min-w-0 rounded-xl bg-white p-6 shadow-sm">
           <div className="mb-5 flex items-center justify-between gap-4">
             <div>
               <h2 className="text-xl font-bold text-slate-900">Zonas y recorrido</h2>
@@ -365,13 +365,13 @@ function ZoneEditor({
   }, [zone.name]);
 
   return (
-    <div className="grid gap-3 rounded-xl border border-slate-200 p-4 md:grid-cols-[1fr_auto_auto] md:items-end">
+    <div className="grid gap-3 rounded-xl border border-[#E5E7EB] bg-white p-4 md:grid-cols-[1fr_auto_auto] md:items-end">
       <div>
         <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">Nombre</label>
         <input
           value={name}
           onChange={(event) => setName(event.target.value)}
-          className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-sky-500"
+          className="w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm outline-none focus:border-[#D4AF37]"
         />
       </div>
       <div className="rounded-lg bg-slate-100 px-3 py-2 text-sm font-medium text-slate-700">
@@ -381,14 +381,14 @@ function ZoneEditor({
         <button
           type="button"
           onClick={() => onSave(zone, name)}
-          className="rounded-lg bg-sky-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-sky-500"
+          className="rounded-lg bg-[#111827] px-3 py-2 text-sm font-medium text-white transition hover:bg-[#1F2937]"
         >
           Guardar
         </button>
         <button
           type="button"
           onClick={() => onDelete(zone.id)}
-          className="rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50"
+          className="rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
         >
           Eliminar
         </button>

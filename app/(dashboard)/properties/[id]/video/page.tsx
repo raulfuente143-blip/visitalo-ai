@@ -1,6 +1,7 @@
 import { createServerComponentClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { GenerateVideoButton } from "@/components/generate-video-button";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 export default async function PropertyVideoPage({
   params,
@@ -62,38 +63,43 @@ export default async function PropertyVideoPage({
   const hasPhotos = zonesWithPhotos.some((zone) => zone.photos.length > 0);
 
   return (
-    <main className="min-h-screen bg-slate-100 p-6 text-slate-900">
-      <div className="mx-auto max-w-5xl">
-        <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+    <div className="mx-auto max-w-5xl text-[#111827]">
+        <Breadcrumb
+          items={[
+            { label: "Propiedades", href: "/properties" },
+            { label: property.name, href: `/properties/${id}/video` },
+            { label: "Generar video", href: `/properties/${id}/video` },
+          ]}
+        />
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-sky-600">Video inmobiliario</p>
-            <h1 className="mt-2 text-3xl font-bold">{property.name}</h1>
-            <p className="mt-2 text-sm text-slate-500">{property.address}</p>
+            <h1 className="text-2xl font-bold">{property.name}</h1>
+            <p className="mt-1 text-sm text-[#6B7280]">{property.address}</p>
           </div>
           <a
             href={`/properties/${id}/editor`}
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            className="rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm font-medium text-[#111827] transition hover:bg-[#F9FAFB]"
           >
             Volver al plano
           </a>
         </div>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <section className="rounded-xl bg-white p-6 shadow-sm">
           {hasPhotos ? (
             <div className="space-y-6">
               <div>
-                <h2 className="text-xl font-bold">Habitaciones con fotos</h2>
-                <p className="mt-1 text-sm text-slate-500">
+                <h2 className="text-xl font-bold text-[#111827]">Habitaciones con fotos</h2>
+                <p className="mt-1 text-sm text-[#6B7280]">
                   El video recorrerá las habitaciones en el orden definido por el plano.
                 </p>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 md:grid-cols-2">
                 {zonesWithPhotos.map((zone) => (
-                  <article key={zone.id} className="rounded-xl border border-slate-200 p-4">
+                  <article key={zone.id} className="rounded-xl bg-white p-4 shadow-sm">
                     <div className="mb-3 flex items-center justify-between">
-                      <h3 className="font-semibold text-slate-900">{zone.name}</h3>
-                      <span className="text-xs text-slate-500">Habitación {zone.room_order}</span>
+                      <h3 className="font-semibold text-[#111827]">{zone.name}</h3>
+                      <span className="text-xs text-[#6B7280]">Habitación {zone.room_order}</span>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       {zone.photos.map((photo) => (
@@ -112,14 +118,13 @@ export default async function PropertyVideoPage({
               <GenerateVideoButton propertyId={id} />
             </div>
           ) : (
-            <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center">
-              <p className="text-lg font-semibold text-slate-800">
+            <div className="rounded-xl border border-dashed border-[#E5E7EB] bg-[#F9FAFB] p-10 text-center">
+              <p className="text-lg font-semibold text-[#111827]">
                 Añade fotos al plano antes de generar el video
               </p>
             </div>
           )}
         </section>
-      </div>
-    </main>
+    </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { use, useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 const VIDEO_STATUS = {
   pending: "pending",
@@ -73,78 +74,93 @@ export default function VideoStatusPage({
     }
   }, [video]);
 
+  const breadcrumb = (
+    <Breadcrumb
+      items={[
+        { label: "Videos", href: "/videos" },
+        { label: "Video generado", href: `/videos/${id}` },
+      ]}
+    />
+  );
+
   if (error) {
     return (
-      <main className="min-h-screen bg-slate-100 p-6 text-slate-900">
-        <div className="mx-auto max-w-2xl rounded-2xl border border-red-200 bg-white p-8 text-center shadow-sm">
+      <div className="mx-auto max-w-4xl text-[#111827]">
+        {breadcrumb}
+        <div className="rounded-xl bg-white p-8 text-center shadow-sm">
           <p className="text-red-600">{error}</p>
         </div>
-      </main>
+      </div>
     );
   }
 
   if (loading || !video) {
     return (
-      <main className="min-h-screen bg-slate-100 p-6 text-slate-900">
-        <div className="mx-auto max-w-2xl rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-sky-200 border-t-sky-600" />
+      <div className="mx-auto max-w-4xl text-[#111827]">
+        {breadcrumb}
+        <div className="rounded-xl bg-white p-8 text-center shadow-sm">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-[#E5E7EB] border-t-[#D4AF37]" />
           <p className="mt-4 font-medium">Preparando tu video...</p>
         </div>
-      </main>
+      </div>
     );
   }
 
   if (video.status === VIDEO_STATUS.pending) {
     return (
-      <main className="min-h-screen bg-slate-100 p-6 text-slate-900">
-        <div className="mx-auto max-w-2xl rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-sky-200 border-t-sky-600" />
+      <div className="mx-auto max-w-4xl text-[#111827]">
+        {breadcrumb}
+        <div className="rounded-xl bg-white p-8 text-center shadow-sm">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-[#E5E7EB] border-t-[#D4AF37]" />
           <p className="mt-4 font-medium">Preparando tu video...</p>
         </div>
-      </main>
+      </div>
     );
   }
 
   if (video.status === VIDEO_STATUS.processing) {
     return (
-      <main className="min-h-screen bg-slate-100 p-6 text-slate-900">
-        <div className="mx-auto max-w-2xl rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-sky-200 border-t-sky-600" />
+      <div className="mx-auto max-w-4xl text-[#111827]">
+        {breadcrumb}
+        <div className="rounded-xl bg-white p-8 text-center shadow-sm">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-[#E5E7EB] border-t-[#D4AF37]" />
           <p className="mt-4 font-medium">Generando video...</p>
         </div>
-      </main>
+      </div>
     );
   }
 
   if (video.status === VIDEO_STATUS.completed) {
     return (
-      <main className="min-h-screen bg-slate-100 p-6 text-slate-900">
-        <div className="mx-auto max-w-4xl rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-          <h1 className="text-2xl font-bold">Video generado</h1>
-          <p className="mt-2 text-sm text-slate-500">Tu recorrido virtual está listo.</p>
-          <div className="mt-6 overflow-hidden rounded-xl border border-slate-200">
-            <video src={video.output_url ?? undefined} controls autoPlay className="w-full bg-slate-950" />
+      <div className="mx-auto max-w-4xl text-[#111827]">
+        {breadcrumb}
+        <div>
+          <h1 className="mb-2 text-2xl font-bold text-[#111827]">Video generado</h1>
+          <p className="mb-6 text-sm text-[#6B7280]">Tu recorrido virtual está listo.</p>
+          <div className="overflow-hidden rounded-xl bg-white shadow-sm">
+            <video src={video.output_url ?? undefined} controls autoPlay className="w-full bg-black" />
           </div>
           {video.output_url ? (
             <a
               href={video.output_url}
               download
-              className="mt-6 inline-flex rounded-xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white hover:bg-sky-500"
+              className="mt-6 inline-flex rounded-xl bg-[#111827] px-6 py-3 text-white transition hover:bg-[#1F2937]"
             >
               Descargar video
             </a>
           ) : null}
         </div>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 p-6 text-slate-900">
-      <div className="mx-auto max-w-2xl rounded-2xl border border-red-200 bg-red-50 p-8 text-center shadow-sm">
+    <div className="mx-auto max-w-4xl text-[#111827]">
+      {breadcrumb}
+      <div className="rounded-xl bg-white p-8 text-center shadow-sm">
         <h1 className="text-xl font-bold text-red-700">No se pudo generar el video</h1>
         <p className="mt-2 text-red-600">{video.error_message ?? "Ocurrió un error desconocido."}</p>
       </div>
-    </main>
+    </div>
   );
 }

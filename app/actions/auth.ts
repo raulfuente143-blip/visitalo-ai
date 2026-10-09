@@ -129,7 +129,7 @@ export async function saveAgencyProfile(formData: FormData) {
   const secondaryColor = String(formData.get("secondaryColor") ?? "#F59E0B").trim();
 
   if (!name) {
-    redirect("/dashboard?error=El+nombre+de+la+agencia+es+obligatorio");
+    redirect("/account?error=El+nombre+de+la+agencia+es+obligatorio");
   }
 
   const { data: existingMembership } = await supabase
@@ -168,11 +168,12 @@ export async function saveAgencyProfile(formData: FormData) {
       const { data: agencyId, error: agencyError } = await supabase.rpc("create_agency_for_user", rpcPayload);
 
       if (agencyError || !agencyId) {
-        redirect(`/dashboard?error=${encodeURIComponent(agencyError?.message ?? "No+se+puedo+crear+la+agencia")}`);
+        redirect(`/account?error=${encodeURIComponent(agencyError?.message ?? "No+se+puedo+crear+la+agencia")}`);
       }
 
       revalidatePath("/dashboard");
-      redirect("/dashboard");
+      revalidatePath("/account");
+      redirect("/account");
     }
 
     const { error } = await supabase
@@ -186,13 +187,14 @@ export async function saveAgencyProfile(formData: FormData) {
       .eq("id", existingMembership.agency_id);
 
     if (error) {
-      redirect(`/dashboard?error=${encodeURIComponent(error.message)}`);
+      redirect(`/account?error=${encodeURIComponent(error.message)}`);
     }
 
     revalidatePath("/dashboard");
+    revalidatePath("/account");
     console.log("[saveAgencyProfile] Update exitoso, logo guardado:", logoUrl);
     console.log("[saveAgencyProfile] Redirigiendo a dashboard...");
-    redirect("/dashboard");
+    redirect("/account");
   }
 
   let slug = slugify(name);
@@ -217,11 +219,12 @@ export async function saveAgencyProfile(formData: FormData) {
   const { data: agencyId, error: agencyError } = await supabase.rpc("create_agency_for_user", rpcPayload);
 
   if (agencyError || !agencyId) {
-    redirect(`/dashboard?error=${encodeURIComponent(agencyError?.message ?? "No+se+puedo+crear+la+agencia")}`);
+    redirect(`/account?error=${encodeURIComponent(agencyError?.message ?? "No+se+puedo+crear+la+agencia")}`);
   }
 
   revalidatePath("/dashboard");
-  redirect("/dashboard");
+  revalidatePath("/account");
+  redirect("/account");
 }
 
 export async function signOut() {

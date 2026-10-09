@@ -1,5 +1,6 @@
 import { createServerComponentClient } from "@/lib/supabase/server";
 import { DeletePropertyButton } from "@/components/delete-property-button";
+import { Breadcrumb } from "@/components/breadcrumb";
 import { redirect } from "next/navigation";
 
 const statusStyles: Record<string, string> = {
@@ -37,45 +38,44 @@ export default async function PropertiesPage() {
     .order("created_at", { ascending: false });
 
   return (
-    <main className="min-h-screen bg-slate-100 p-6 text-slate-900">
-      <div className="mx-auto max-w-6xl">
+    <div className="mx-auto max-w-6xl text-[#111827]">
+        <Breadcrumb items={[{ label: "Propiedades", href: "/properties" }]} />
         <div className="mb-8 flex items-center justify-between gap-4">
           <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-sky-600">Propiedades</p>
-            <h1 className="mt-2 text-3xl font-bold">Listado de propiedades</h1>
+            <h1 className="text-2xl font-bold text-[#111827]">Propiedades</h1>
           </div>
 
           <a
             href="/properties/new"
-            className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
+            className="rounded-lg bg-[#D4AF37] px-4 py-2.5 text-sm font-medium text-[#111827] transition hover:brightness-95"
           >
             Nueva propiedad
           </a>
         </div>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <section className="overflow-hidden rounded-xl bg-white shadow-sm">
           {properties && properties.length > 0 ? (
-            <div className="overflow-hidden rounded-xl border border-slate-200">
-              <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
-                <thead className="bg-slate-50">
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-left text-sm">
+                <thead className="bg-[#F9FAFB]">
                   <tr>
-                    <th className="px-4 py-3 font-semibold text-slate-700">Nombre</th>
-                    <th className="px-4 py-3 font-semibold text-slate-700">Dirección</th>
-                    <th className="px-4 py-3 font-semibold text-slate-700">Referencia</th>
-                    <th className="px-4 py-3 font-semibold text-slate-700">Estado</th>
-                    <th className="px-4 py-3 font-semibold text-slate-700">Acción</th>
+                    <th className="px-4 py-3 font-semibold text-[#6B7280]">Nombre</th>
+                    <th className="px-4 py-3 font-semibold text-[#6B7280]">Dirección</th>
+                    <th className="px-4 py-3 font-semibold text-[#6B7280]">Referencia</th>
+                    <th className="px-4 py-3 font-semibold text-[#6B7280]">Estado</th>
+                    <th className="px-4 py-3 font-semibold text-[#6B7280]">Acción</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200 bg-white">
+                <tbody>
                   {properties.map((property) => (
-                    <tr key={property.id} className="hover:bg-slate-50">
-                      <td className="px-4 py-4 font-medium text-slate-900">
-                        <a href={`/properties/${property.id}/editor`} className="text-sky-700 hover:underline">
+                    <tr key={property.id} className="border-b border-[#F3F4F6] transition hover:bg-[#F9FAFB]">
+                      <td className="px-4 py-4 font-medium text-[#111827]">
+                        <a href={`/properties/${property.id}/editor`} className="hover:underline">
                           {property.name}
                         </a>
                       </td>
-                      <td className="px-4 py-4 text-slate-600">{property.address}</td>
-                      <td className="px-4 py-4 text-slate-500">
+                      <td className="px-4 py-4 text-[#6B7280]">{property.address}</td>
+                      <td className="px-4 py-4 text-[#6B7280]">
                         {property.internal_reference ?? "—"}
                       </td>
                       <td className="px-4 py-4">
@@ -89,13 +89,13 @@ export default async function PropertiesPage() {
                         <div className="flex items-center gap-2">
                           <a
                             href={`/properties/${property.id}/editor`}
-                            className="inline-flex rounded-lg bg-sky-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-sky-500"
+                            className="inline-flex rounded-lg bg-[#111827] px-3 py-2 text-sm font-semibold text-white transition hover:bg-[#1F2937]"
                           >
                             Abrir editor
                           </a>
                           <a
                             href={`/properties/${property.id}/video`}
-                            className="inline-flex rounded-lg bg-violet-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-violet-500"
+                            className="inline-flex rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm font-semibold text-[#111827] transition hover:bg-[#F9FAFB]"
                           >
                             Crear video
                           </a>
@@ -108,21 +108,20 @@ export default async function PropertiesPage() {
               </table>
             </div>
           ) : (
-            <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center">
-              <p className="text-lg font-semibold text-slate-800">Todavía no hay propiedades</p>
-              <p className="mt-2 text-sm text-slate-500">
+            <div className="p-10 text-center">
+              <p className="text-lg font-semibold text-[#111827]">Todavía no hay propiedades</p>
+              <p className="mt-2 text-sm text-[#6B7280]">
                 Crea tu primera propiedad para empezar a preparar el plano de la vivienda.
               </p>
               <a
                 href="/properties/new"
-                className="mt-5 inline-block rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
+                className="mt-5 inline-block rounded-lg bg-[#D4AF37] px-4 py-2.5 text-sm font-medium text-[#111827] transition hover:brightness-95"
               >
                 Crear primera propiedad
               </a>
             </div>
           )}
         </section>
-      </div>
-    </main>
+    </div>
   );
 }
