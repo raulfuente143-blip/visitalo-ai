@@ -106,6 +106,12 @@ export async function completeOnboarding(formData: FormData) {
 }
 
 export async function saveAgencyProfile(formData: FormData) {
+  console.log("[saveAgencyProfile] formData:", {
+    agencyName: formData.get("agencyName"),
+    logoUrl: formData.get("logoUrl"),
+    primaryColor: formData.get("primaryColor"),
+  });
+
   const supabase = await createServerComponentClient();
   const {
     data: { user },
@@ -113,6 +119,7 @@ export async function saveAgencyProfile(formData: FormData) {
   } = await supabase.auth.getUser();
 
   if (userError || !user) {
+    console.log("[saveAgencyProfile] Sin sesión:", userError?.message);
     redirect("/login");
   }
 
@@ -183,6 +190,8 @@ export async function saveAgencyProfile(formData: FormData) {
     }
 
     revalidatePath("/dashboard");
+    console.log("[saveAgencyProfile] Update exitoso, logo guardado:", logoUrl);
+    console.log("[saveAgencyProfile] Redirigiendo a dashboard...");
     redirect("/dashboard");
   }
 

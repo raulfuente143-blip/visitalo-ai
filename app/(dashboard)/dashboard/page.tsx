@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Suspense } from "react";
 import { saveAgencyProfile } from "@/app/actions/auth";
 import { OnboardingLogoUploader } from "@/components/onboarding-logo-uploader";
 import { createServerComponentClient } from "@/lib/supabase/server";
@@ -203,36 +202,19 @@ export default async function DashboardPage({
               />
             </div>
 
-            <Suspense fallback={<div className="text-sm text-slate-500">Cargando uploader…</div>}>
-              <OnboardingLogoUploader />
-            </Suspense>
+            <OnboardingLogoUploader initialLogoUrl={agency?.logo_url ?? undefined} />
 
-            <div className="grid gap-5 md:grid-cols-2">
-              <div>
-                <label htmlFor="primaryColor" className="mb-2 block text-sm font-medium text-slate-700">
-                  Color principal
-                </label>
-                <input
-                  id="primaryColor"
-                  name="primaryColor"
-                  type="color"
-                  defaultValue={agency?.brand_primary_color ?? "#0F172A"}
-                  className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 p-1"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="secondaryColor" className="mb-2 block text-sm font-medium text-slate-700">
-                  Color secundario
-                </label>
-                <input
-                  id="secondaryColor"
-                  name="secondaryColor"
-                  type="color"
-                  defaultValue={agency?.brand_secondary_color ?? "#F59E0B"}
-                  className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 p-1"
-                />
-              </div>
+            <div>
+              <label htmlFor="brandColor" className="mb-2 block text-sm font-medium text-slate-700">
+                Color de marca
+              </label>
+              <input
+                id="brandColor"
+                name="primaryColor"
+                type="color"
+                defaultValue={agency?.brand_primary_color ?? "#0F172A"}
+                className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 p-1"
+              />
             </div>
 
             {error ? (

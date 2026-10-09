@@ -32,21 +32,22 @@ export async function processVideoInBrowser(
     .eq("id", propertyId)
     .single();
 
+  const { data: agencyData } = propertyData?.agency_id
+    ? await supabase
+        .from("agencies")
+        .select("logo_url, brand_primary_color")
+        .eq("id", propertyData.agency_id)
+        .single()
+    : { data: null };
+  const brandColor = agencyData?.brand_primary_color ?? "#FF6B4A";
+
   let logoImage: HTMLImageElement | null = null;
 
-  if (propertyData?.agency_id) {
-    const { data: agencyData } = await supabase
-      .from("agencies")
-      .select("logo_url")
-      .eq("id", propertyData.agency_id)
-      .single();
-
-    if (agencyData?.logo_url) {
-      try {
-        logoImage = await loadImageAsBase64(agencyData.logo_url);
-      } catch {
-        logoImage = null;
-      }
+  if (agencyData?.logo_url) {
+    try {
+      logoImage = await loadImageAsBase64(agencyData.logo_url);
+    } catch {
+      logoImage = null;
     }
   }
 
@@ -100,6 +101,7 @@ export async function processVideoInBrowser(
     zoneName: string,
     durationMs: number,
     logo: HTMLImageElement | null,
+    brandColor: string,
   ): Promise<void> => {
     return new Promise((resolve) => {
       const fps = 30;
@@ -118,34 +120,38 @@ export async function processVideoInBrowser(
 
         // Fondo semitransparente detrás del logo arriba izquierda
         if (logo) {
-          const logoSize = 80;
-          const padding = 12;
-          const bgWidth = logoSize + padding * 2;
-          const bgHeight = logoSize + padding * 2;
-          ctx.fillStyle = "rgba(0,0,0,0.45)";
-          ctx.beginPath();
-          ctx.roundRect(10, 10, bgWidth, bgHeight, 8);
-          ctx.fill();
-          ctx.globalAlpha = 1;
-          ctx.drawImage(logo, 10 + padding, 10 + padding, logoSize, logoSize);
+          const maxSize = 120;
+          const ratio = logo.width / logo.height;
+          const logoW = ratio >= 1 ? maxSize : maxSize * ratio;
+          const logoH = ratio >= 1 ? maxSize / ratio : maxSize;
+          ctx.globalAlpha = 0.92;
+          ctx.drawImage(logo, 20, 20, logoW, logoH);
           ctx.globalAlpha = 1;
         }
 
-        // Marca de agua visitalo.ai abajo derecha más visible
+        const barHeight = 56;
+        const barY = canvas.height - barHeight;
+
+        // Fondo sólido semitransparente que siempre contrasta
+        ctx.fillStyle = "rgba(0,0,0,0.6)";
+        ctx.fillRect(0, barY, canvas.width, barHeight);
+
+        // Línea del color de marca
+        ctx.fillStyle = brandColor;
+        ctx.fillRect(0, barY, canvas.width, 4);
+
+        // Nombre centrado en blanco
+        ctx.fillStyle = "white";
+        ctx.font = "bold 24px sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(zoneName, canvas.width / 2, barY + barHeight / 2 + 4);
+
+        // Marca de agua a la derecha
         ctx.fillStyle = "rgba(255,255,255,0.75)";
-        ctx.font = "bold 18px sans-serif";
+        ctx.font = "bold 16px sans-serif";
         ctx.textAlign = "right";
-        ctx.textBaseline = "bottom";
-        ctx.fillText("visitalo.ai", canvas.width - 16, canvas.height - 16);
-
-        if (progress >= 0) {
-          ctx.fillStyle = "rgba(0,0,0,0.5)";
-          ctx.fillRect(0, canvas.height - 80, canvas.width, 80);
-          ctx.fillStyle = "white";
-          ctx.font = "bold 32px sans-serif";
-          ctx.textAlign = "center";
-          ctx.fillText(zoneName, canvas.width / 2, canvas.height - 30);
-        }
+        ctx.fillText("visitalo.ai", canvas.width - 20, barY + barHeight / 2 + 4);
 
         frame++;
         if (frame <= totalFrames) {
@@ -211,12 +217,12 @@ export async function processVideoInBrowser(
         .eq("id", videoId);
 
       const img1 = await loadImageAsBase64(foto1.url);
-      await drawFramesForZone(img1, zone.name, foto2 ? 2000 : 3000, logoImage);
+      await drawFramesForZone(img1, zone.name, foto2 ? 2000 : 3000, logoImage, brandColor);
 
       if (foto2) {
         await fadeToBlack(300);
         const img2 = await loadImageAsBase64(foto2.url);
-        await drawFramesForZone(img2, zone.name, 1500, logoImage);
+        await drawFramesForZone(img2, zone.name, 1500, logoImage, brandColor);
       }
 
       if (index !== zonesWithPhoto.length - 1) {

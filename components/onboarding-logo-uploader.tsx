@@ -35,12 +35,12 @@ function normalizeImageFile(file: File) {
   return normalizedFile;
 }
 
-export function OnboardingLogoUploader() {
+export function OnboardingLogoUploader({ initialLogoUrl }: { initialLogoUrl?: string }) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [logoUrl, setLogoUrl] = useState("");
+  const [logoUrl, setLogoUrl] = useState(initialLogoUrl ?? "");
+  const [previewUrl, setPreviewUrl] = useState<string | null>(initialLogoUrl ?? null);
   const [isUploading, setIsUploading] = useState(false);
 
   const uploadLogoToSupabase = async (file: File) => {
@@ -140,7 +140,7 @@ export function OnboardingLogoUploader() {
             <p className="text-sm font-medium text-slate-700">
               Arrastra aquí tu logo, pégalo o sube uno desde tu dispositivo
             </p>
-            <p className="mt-1 text-xs text-slate-500">PNG, JPG, WEBP, SVG o GIF</p>
+            <p className="mt-1 text-xs text-slate-500">PNG con fondo transparente para mejor resultado en los videos</p>
           </div>
 
           <button
