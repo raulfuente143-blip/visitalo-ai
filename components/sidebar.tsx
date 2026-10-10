@@ -7,6 +7,7 @@ const navigation = [
   { label: "Dashboard", href: "/dashboard", icon: "home" },
   { label: "Propiedades", href: "/properties", icon: "building" },
   { label: "Videos", href: "/videos", icon: "play" },
+  { label: "Personalizar", href: "/settings", icon: "personalize" },
   { label: "Cuenta", href: "/account", icon: "settings" },
 ] as const;
 
@@ -47,6 +48,26 @@ function NavigationIcon({ name }: { name: (typeof navigation)[number]["icon"] })
     );
   }
 
+  if (name === "personalize") {
+    return (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className="h-5 w-5 shrink-0"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        aria-hidden="true"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"
+        />
+      </svg>
+    );
+  }
+
   return (
     <svg {...commonProps}>
       <path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z" />
@@ -59,7 +80,7 @@ function NavigationLinks({ mobile = false }: { mobile?: boolean }) {
   const pathname = usePathname();
 
   return (
-    <nav className={mobile ? "grid grid-cols-4" : "space-y-1 px-3"} aria-label="Navegación principal">
+    <nav className={mobile ? "grid grid-cols-5" : "space-y-1 px-3"} aria-label="Navegación principal">
       {navigation.map((item) => {
         const itemPath = item.href.split("#")[0];
         const isActive = itemPath === pathname && !item.href.includes("#");

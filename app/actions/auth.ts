@@ -129,7 +129,7 @@ export async function saveAgencyProfile(formData: FormData) {
   const secondaryColor = String(formData.get("secondaryColor") ?? "#F59E0B").trim();
 
   if (!name) {
-    redirect("/account?error=El+nombre+de+la+agencia+es+obligatorio");
+    redirect("/settings?error=El+nombre+de+la+agencia+es+obligatorio");
   }
 
   const { data: existingMembership } = await supabase
@@ -168,12 +168,12 @@ export async function saveAgencyProfile(formData: FormData) {
       const { data: agencyId, error: agencyError } = await supabase.rpc("create_agency_for_user", rpcPayload);
 
       if (agencyError || !agencyId) {
-        redirect(`/account?error=${encodeURIComponent(agencyError?.message ?? "No+se+puedo+crear+la+agencia")}`);
+        redirect(`/settings?error=${encodeURIComponent(agencyError?.message ?? "No+se+puedo+crear+la+agencia")}`);
       }
 
       revalidatePath("/dashboard");
-      revalidatePath("/account");
-      redirect("/account");
+      revalidatePath("/settings");
+      redirect("/settings");
     }
 
     const { error } = await supabase
@@ -187,14 +187,14 @@ export async function saveAgencyProfile(formData: FormData) {
       .eq("id", existingMembership.agency_id);
 
     if (error) {
-      redirect(`/account?error=${encodeURIComponent(error.message)}`);
+      redirect(`/settings?error=${encodeURIComponent(error.message)}`);
     }
 
     revalidatePath("/dashboard");
-    revalidatePath("/account");
+    revalidatePath("/settings");
     console.log("[saveAgencyProfile] Update exitoso, logo guardado:", logoUrl);
-    console.log("[saveAgencyProfile] Redirigiendo a dashboard...");
-    redirect("/account");
+    console.log("[saveAgencyProfile] Redirigiendo a personalización...");
+    redirect("/settings");
   }
 
   let slug = slugify(name);
@@ -219,12 +219,51 @@ export async function saveAgencyProfile(formData: FormData) {
   const { data: agencyId, error: agencyError } = await supabase.rpc("create_agency_for_user", rpcPayload);
 
   if (agencyError || !agencyId) {
-    redirect(`/account?error=${encodeURIComponent(agencyError?.message ?? "No+se+puedo+crear+la+agencia")}`);
+    redirect(`/settings?error=${encodeURIComponent(agencyError?.message ?? "No+se+puedo+crear+la+agencia")}`);
   }
 
   revalidatePath("/dashboard");
+  revalidatePath("/settings");
+  redirect("/settings");
+}
+
+export async function updateUserProfile(formData: FormData): Promise<{ success: boolean; message: string }> {
+  const supabase = await createServerComponentClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    return { success: false, message: "Tu sesión ha expirado. Inicia sesión de nuevo." };
+  }
+
+  const fullName = String(formData.get("fullName") ?? "").trim();
+  const { error } = await supabase.auth.updateUser({ data: { full_name: fullName } });
+
+  if (error) {
+    return { success: false, message: error.message };
+  }
+
   revalidatePath("/account");
-  redirect("/account");
+  return { success: true, message: "Cambios guardados correctamente." };
+}
+
+export async function sendPasswordReset(): Promise<{ success: boolean; message: string }> {
+  const supabase = await createServerComponentClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user?.email) {
+    return { success: false, message: "No se encontró el email de la cuenta." };
+  }
+
+  const { error } = await supabase.auth.resetPasswordForEmail(user.email);
+
+  if (error) {
+    return { success: false, message: error.message };
+  }
+
+  return { success: true, message: "Email enviado. Revisa tu bandeja de entrada." };
 }
 
 export async function signOut() {

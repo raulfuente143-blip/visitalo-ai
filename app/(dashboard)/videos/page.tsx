@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Breadcrumb } from "@/components/breadcrumb";
+import { VideoCardPreview } from "@/components/video-card-preview";
 import { createServerComponentClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
@@ -91,13 +92,16 @@ export default async function VideosPage() {
                   </span>
                 </div>
 
-                {video.status === "completed" ? (
-                  <Link
-                    href={`/videos/${video.id}`}
-                    className="mt-5 inline-flex rounded-lg bg-[#111827] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#1F2937]"
-                  >
-                    Ver video
-                  </Link>
+                {video.status === "completed" && video.output_url ? (
+                  <>
+                    <VideoCardPreview src={video.output_url} />
+                    <Link
+                      href={`/videos/${video.id}`}
+                      className="mt-5 inline-flex rounded-lg bg-[#111827] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#1F2937]"
+                    >
+                      Ver video
+                    </Link>
+                  </>
                 ) : null}
               </article>
             );
