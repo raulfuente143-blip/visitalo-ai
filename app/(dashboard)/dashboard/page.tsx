@@ -84,7 +84,7 @@ export default async function DashboardPage() {
     <div className="min-h-full text-[#111827]">
       <div className="mx-auto max-w-6xl">
         <header className="mb-8 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-[#111827]">Dashboard</h1>
+          <h1 className="text-2xl font-bold text-[#111827]">Inicio</h1>
         </header>
 
         <section className="mb-8 rounded-xl bg-white p-6 shadow-sm">

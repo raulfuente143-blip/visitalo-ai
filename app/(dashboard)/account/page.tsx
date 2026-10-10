@@ -26,6 +26,25 @@ export default async function AccountPage() {
         fullName={typeof user.user_metadata?.full_name === "string" ? user.user_metadata.full_name : ""}
         email={user.email ?? ""}
       />
+
+      <section className="mt-6 rounded-xl bg-white p-6 shadow-sm">
+        <h2 className="mb-1 text-lg font-semibold text-[#111827]">Legal</h2>
+        <p className="mb-4 text-sm text-[#6B7280]">Documentos legales y política de privacidad.</p>
+        <div className="space-y-3">
+          <a href="/legal/privacidad" target="_blank" className="flex items-center justify-between rounded-lg border border-[#E5E7EB] p-3 transition hover:bg-[#F9FAFB]">
+            <span className="text-sm text-[#111827]">Política de privacidad</span>
+            <span className="text-[#9CA3AF]">→</span>
+          </a>
+          <a href="/legal/cookies" target="_blank" className="flex items-center justify-between rounded-lg border border-[#E5E7EB] p-3 transition hover:bg-[#F9FAFB]">
+            <span className="text-sm text-[#111827]">Política de cookies</span>
+            <span className="text-[#9CA3AF]">→</span>
+          </a>
+          <a href="/legal/terminos" target="_blank" className="flex items-center justify-between rounded-lg border border-[#E5E7EB] p-3 transition hover:bg-[#F9FAFB]">
+            <span className="text-sm text-[#111827]">Términos y condiciones</span>
+            <span className="text-[#9CA3AF]">→</span>
+          </a>
+        </div>
+      </section>
     </div>
   );
 }

@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { Breadcrumb } from "@/components/breadcrumb";
+import { DeleteAllVideosButton } from "@/components/delete-all-videos-button";
+import { DeleteVideoButton } from "@/components/delete-video-button";
 import { VideoCardPreview } from "@/components/video-card-preview";
 import { createServerComponentClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
@@ -63,8 +65,13 @@ export default async function VideosPage() {
     <div className="mx-auto max-w-6xl text-[#111827]">
       <Breadcrumb items={[{ label: "Videos", href: "/videos" }]} />
       <header className="mb-8">
-        <h1 className="text-2xl font-bold">Videos</h1>
-        <p className="mt-1 text-sm text-[#6B7280]">Videos generados durante los últimos 30 días.</p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold">Videos</h1>
+            <p className="mt-1 text-sm text-[#6B7280]">Videos generados durante los últimos 30 días.</p>
+          </div>
+          <DeleteAllVideosButton />
+        </div>
       </header>
 
       {videos?.length ? (
@@ -101,6 +108,7 @@ export default async function VideosPage() {
                     >
                       Ver video
                     </Link>
+                    <DeleteVideoButton videoId={video.id} />
                   </>
                 ) : null}
               </article>

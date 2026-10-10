@@ -7,10 +7,11 @@ import { redirect } from "next/navigation";
 export default async function SettingsPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ error?: string }>;
+  searchParams?: Promise<{ error?: string; saved?: string }>;
 }) {
   const params = searchParams ? await searchParams : {};
   const error = params.error ? decodeURIComponent(params.error) : "";
+  const saved = params.saved === "true";
 
   const supabase = await createServerComponentClient();
   const {
@@ -43,6 +44,12 @@ export default async function SettingsPage({
         <h1 className="text-2xl font-bold">Personalizar tu agencia</h1>
         <p className="mt-1 text-sm text-[#6B7280]">Actualiza el logo y color de marca de tu agencia.</p>
       </header>
+
+      {saved ? (
+        <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+          ✓ Cambios guardados correctamente
+        </div>
+      ) : null}
 
       <section className="rounded-xl bg-white p-6 shadow-sm">
         <h2 className="mb-5 text-xl font-bold text-[#111827]">

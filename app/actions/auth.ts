@@ -173,7 +173,7 @@ export async function saveAgencyProfile(formData: FormData) {
 
       revalidatePath("/dashboard");
       revalidatePath("/settings");
-      redirect("/settings");
+      redirect("/settings?saved=true");
     }
 
     const { error } = await supabase
@@ -194,7 +194,7 @@ export async function saveAgencyProfile(formData: FormData) {
     revalidatePath("/settings");
     console.log("[saveAgencyProfile] Update exitoso, logo guardado:", logoUrl);
     console.log("[saveAgencyProfile] Redirigiendo a personalización...");
-    redirect("/settings");
+    redirect("/settings?saved=true");
   }
 
   let slug = slugify(name);
@@ -224,7 +224,7 @@ export async function saveAgencyProfile(formData: FormData) {
 
   revalidatePath("/dashboard");
   revalidatePath("/settings");
-  redirect("/settings");
+  redirect("/settings?saved=true");
 }
 
 export async function updateUserProfile(formData: FormData): Promise<{ success: boolean; message: string }> {

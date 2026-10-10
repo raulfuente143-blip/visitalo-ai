@@ -73,3 +73,28 @@ export async function createVideo(propertyId: string) {
   revalidatePath(`/videos/${video.id}`);
   return video.id;
 }
+
+export async function deleteVideo(videoId: string) {
+  const supabase = await createServerComponentClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+  await supabase.from("videos").delete().eq("id", videoId);
+  revalidatePath("/videos");
+}
+
+export async function deleteAllVideos() {
+  const supabase = await createServerComponentClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const { data: membership } = await supabase
+    .from("agency_members")
+    .select("agency_id")
+    .eq("user_id", user.id)
+    .single();
+
+  if (!membership) return;
+
+  await supabase.from("videos").delete().eq("agency_id", membership.agency_id);
+  revalidatePath("/videos");
+}

@@ -4,14 +4,19 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const navigation = [
-  { label: "Dashboard", href: "/dashboard", icon: "home" },
+  { label: "Inicio", href: "/dashboard", icon: "home" },
   { label: "Propiedades", href: "/properties", icon: "building" },
   { label: "Videos", href: "/videos", icon: "play" },
-  { label: "Personalizar", href: "/settings", icon: "personalize" },
-  { label: "Cuenta", href: "/account", icon: "settings" },
 ] as const;
 
-function NavigationIcon({ name }: { name: (typeof navigation)[number]["icon"] }) {
+const secondaryNavigation = [
+  { label: "Personalizar", href: "/settings", icon: "personalize" },
+  { label: "Ajustes", href: "/account", icon: "settings" },
+] as const;
+
+const allNavigation = [...navigation, ...secondaryNavigation];
+
+function NavigationIcon({ name }: { name: (typeof allNavigation)[number]["icon"] }) {
   const commonProps = {
     className: "h-5 w-5 shrink-0",
     fill: "none",
@@ -76,12 +81,16 @@ function NavigationIcon({ name }: { name: (typeof navigation)[number]["icon"] })
   );
 }
 
-function NavigationLinks({ mobile = false }: { mobile?: boolean }) {
+function NavigationLinkList({
+  items,
+  mobile = false,
+}: {
+  items: readonly (typeof allNavigation)[number][];
+  mobile?: boolean;
+}) {
   const pathname = usePathname();
 
-  return (
-    <nav className={mobile ? "grid grid-cols-5" : "space-y-1 px-3"} aria-label="Navegación principal">
-      {navigation.map((item) => {
+  return items.map((item) => {
         const itemPath = item.href.split("#")[0];
         const isActive = itemPath === pathname && !item.href.includes("#");
 
@@ -98,7 +107,23 @@ function NavigationLinks({ mobile = false }: { mobile?: boolean }) {
             <span>{item.label}</span>
           </Link>
         );
-      })}
+      });
+}
+
+function NavigationLinks({ mobile = false }: { mobile?: boolean }) {
+  if (mobile) {
+    return (
+      <nav className="grid grid-cols-5" aria-label="Navegación principal">
+        <NavigationLinkList items={allNavigation} mobile />
+      </nav>
+    );
+  }
+
+  return (
+    <nav aria-label="Navegación principal">
+      <div className="space-y-1 px-3">
+        <NavigationLinkList items={navigation} />
+      </div>
     </nav>
   );
 }
@@ -110,10 +135,19 @@ export function Sidebar({ email }: { email: string }) {
         <div className="px-6 py-6 text-xl font-bold text-white">
           Visitalo<span className="text-[#D4AF37]">.ai</span>
         </div>
-        <div className="mt-3 flex-1">
+        <div className="mt-3 flex flex-1 flex-col">
           <NavigationLinks />
+          <div className="flex-1" />
+          <div className="mx-4 mb-2 border-t border-[#1F2937]" />
+          <div className="pb-3">
+            <nav aria-label="Ajustes">
+              <div className="space-y-1 px-3">
+                <NavigationLinkList items={secondaryNavigation} />
+              </div>
+            </nav>
+          </div>
+          <div className="break-all p-4 text-xs text-[#6B7280]">{email}</div>
         </div>
-        <div className="break-all p-4 text-xs text-[#6B7280]">{email}</div>
       </aside>
 
       <div className="fixed inset-x-0 bottom-0 z-50 bg-[#111827] md:hidden">
