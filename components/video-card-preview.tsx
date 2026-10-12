@@ -29,7 +29,7 @@ export function VideoCardPreview({ src }: { src: string }) {
     <video
       ref={videoRef}
       src={src}
-      className="w-full rounded-lg mb-3 aspect-video object-cover bg-slate-100"
+      className="block aspect-video w-full object-cover bg-slate-100"
       muted
       playsInline
       preload="auto"

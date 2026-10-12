@@ -269,5 +269,5 @@ export async function sendPasswordReset(): Promise<{ success: boolean; message: 
 export async function signOut() {
   const supabase = await createServerComponentClient();
   await supabase.auth.signOut();
-  redirect("/");
+  redirect("/login");
 }

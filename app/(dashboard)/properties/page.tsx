@@ -1,6 +1,5 @@
 import { createServerComponentClient } from "@/lib/supabase/server";
 import { DeletePropertyButton } from "@/components/delete-property-button";
-import { Breadcrumb } from "@/components/breadcrumb";
 import { redirect } from "next/navigation";
 
 const statusStyles: Record<string, string> = {
@@ -39,7 +38,6 @@ export default async function PropertiesPage() {
 
   return (
     <div className="mx-auto max-w-6xl text-[#111827]">
-        <Breadcrumb items={[{ label: "Propiedades", href: "/properties" }]} />
         <div className="mb-8 flex items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-[#111827]">Propiedades</h1>
@@ -47,13 +45,13 @@ export default async function PropertiesPage() {
 
           <a
             href="/properties/new"
-            className="rounded-lg bg-[#D4AF37] px-4 py-2.5 text-sm font-medium text-[#111827] transition hover:brightness-95"
+            className="rounded-full bg-[#D4AF37] px-4 py-2.5 text-sm font-medium text-[#111827] shadow-md transition-all duration-200 hover:shadow-lg"
           >
             Nueva propiedad
           </a>
         </div>
 
-        <section className="overflow-hidden rounded-xl bg-white shadow-sm">
+        <section className="overflow-hidden rounded-2xl bg-white shadow-md">
           {properties && properties.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="min-w-full text-left text-sm">
@@ -89,13 +87,13 @@ export default async function PropertiesPage() {
                         <div className="flex items-center gap-2">
                           <a
                             href={`/properties/${property.id}/editor`}
-                            className="inline-flex rounded-lg bg-[#111827] px-3 py-2 text-sm font-semibold text-white transition hover:bg-[#1F2937]"
+                            className="inline-flex rounded-xl bg-[#111827] px-3 py-2 text-sm font-semibold text-white transition-all duration-200 hover:bg-[#1F2937]"
                           >
                             Abrir editor
                           </a>
                           <a
                             href={`/properties/${property.id}/video`}
-                            className="inline-flex rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm font-semibold text-[#111827] transition hover:bg-[#F9FAFB]"
+                            className="inline-flex rounded-xl border border-[#E5E7EB] px-3 py-2 text-sm font-semibold text-[#111827] transition-all duration-200 hover:bg-[#F9FAFB]"
                           >
                             Crear video
                           </a>
@@ -115,7 +113,7 @@ export default async function PropertiesPage() {
               </p>
               <a
                 href="/properties/new"
-                className="mt-5 inline-block rounded-lg bg-[#D4AF37] px-4 py-2.5 text-sm font-medium text-[#111827] transition hover:brightness-95"
+                className="mt-5 inline-block rounded-full bg-[#D4AF37] px-4 py-2.5 text-sm font-medium text-[#111827] transition-all duration-200 hover:brightness-95"
               >
                 Crear primera propiedad
               </a>

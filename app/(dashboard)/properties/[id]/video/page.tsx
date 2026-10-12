@@ -84,7 +84,7 @@ export default async function PropertyVideoPage({
           </a>
         </div>
 
-        <section className="rounded-xl bg-white p-6 shadow-sm">
+        <section className="rounded-2xl bg-white p-6 shadow-sm">
           {hasPhotos ? (
             <div className="space-y-6">
               <div>
@@ -96,7 +96,7 @@ export default async function PropertyVideoPage({
 
               <div className="grid gap-4 md:grid-cols-2">
                 {zonesWithPhotos.map((zone) => (
-                  <article key={zone.id} className="rounded-xl bg-white p-4 shadow-sm">
+                  <article key={zone.id} className="rounded-2xl bg-white p-4 shadow-sm">
                     <div className="mb-3 flex items-center justify-between">
                       <h3 className="font-semibold text-[#111827]">{zone.name}</h3>
                       <span className="text-xs text-[#6B7280]">Habitación {zone.room_order}</span>
@@ -118,7 +118,7 @@ export default async function PropertyVideoPage({
               <GenerateVideoButton propertyId={id} />
             </div>
           ) : (
-            <div className="rounded-xl border border-dashed border-[#E5E7EB] bg-[#F9FAFB] p-10 text-center">
+            <div className="rounded-2xl border border-dashed border-[#E5E7EB] bg-[#F9FAFB] p-10 text-center">
               <p className="text-lg font-semibold text-[#111827]">
                 Añade fotos al plano antes de generar el video
               </p>

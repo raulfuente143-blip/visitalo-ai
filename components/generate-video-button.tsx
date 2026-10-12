@@ -31,7 +31,7 @@ export function GenerateVideoButton({ propertyId }: { propertyId: string }) {
         type="button"
         onClick={handleGenerate}
         disabled={isGenerating}
-        className="inline-flex rounded-xl bg-[#D4AF37] px-6 py-3 text-base font-bold text-[#111827] transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex rounded-xl bg-[#D4AF37] px-6 py-3 text-base font-bold text-[#111827] shadow-md transition-all hover:shadow-lg hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isGenerating ? "Generando video..." : "Generar video"}
       </button>

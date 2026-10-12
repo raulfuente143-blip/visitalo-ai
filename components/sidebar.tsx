@@ -91,8 +91,7 @@ function NavigationLinkList({
   const pathname = usePathname();
 
   return items.map((item) => {
-        const itemPath = item.href.split("#")[0];
-        const isActive = itemPath === pathname && !item.href.includes("#");
+      const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
 
         return (
           <Link
@@ -100,8 +99,10 @@ function NavigationLinkList({
             href={item.href}
             aria-current={isActive ? "page" : undefined}
             className={mobile
-              ? `flex flex-col items-center gap-1 px-1 py-3 text-[11px] transition ${isActive ? "text-white" : "text-[#9CA3AF]"}`
-              : `flex items-center gap-3 border-l-[3px] px-4 py-3 text-sm font-medium transition ${isActive ? "border-[#D4AF37] bg-[#1F2937] text-white" : "border-transparent text-[#9CA3AF] hover:bg-[#1F2937]"}`}
+              ? `flex flex-col items-center gap-1 px-1 py-3 text-[11px] transition-colors duration-150 ${isActive ? "text-white" : "text-[#9CA3AF]"}`
+              : isActive
+                ? "flex items-center gap-3 mx-3 px-4 py-2.5 text-sm font-medium rounded-xl bg-white/10 text-white border border-white/10 backdrop-blur-sm"
+                : "flex items-center gap-3 mx-3 px-4 py-2.5 text-sm font-medium rounded-xl text-[#9CA3AF] hover:bg-white/5 hover:text-white transition-all duration-150"}
           >
             <NavigationIcon name={item.icon} />
             <span>{item.label}</span>
@@ -131,14 +132,15 @@ function NavigationLinks({ mobile = false }: { mobile?: boolean }) {
 export function Sidebar({ email }: { email: string }) {
   return (
     <>
-      <aside className="hidden min-h-screen w-[240px] shrink-0 flex-col bg-[#111827] md:flex">
-        <div className="px-6 py-6 text-xl font-bold text-white">
-          Visitalo<span className="text-[#D4AF37]">.ai</span>
+      <aside className="hidden md:flex min-h-screen w-[240px] shrink-0 flex-col bg-gradient-to-b from-[#0F172A] to-[#1a1f2e] border-r border-white/5 shadow-2xl fixed top-0 left-0 h-screen z-40 overflow-y-auto">
+        <div className="px-6 py-7">
+          <span className="text-2xl font-bold tracking-tight text-white">Visitalo</span>
+          <span className="text-2xl font-bold tracking-tight text-[#D4AF37]">.ai</span>
         </div>
         <div className="mt-3 flex flex-1 flex-col">
           <NavigationLinks />
           <div className="flex-1" />
-          <div className="mx-4 mb-2 border-t border-[#1F2937]" />
+          <div className="mx-6 my-2 border-t border-white/10" />
           <div className="pb-3">
             <nav aria-label="Ajustes">
               <div className="space-y-1 px-3">
@@ -146,7 +148,9 @@ export function Sidebar({ email }: { email: string }) {
               </div>
             </nav>
           </div>
-          <div className="break-all p-4 text-xs text-[#6B7280]">{email}</div>
+          <div className="p-4 border-t border-white/10">
+            <span className="text-xs text-[#6B7280] truncate block">{email}</span>
+          </div>
         </div>
       </aside>
 

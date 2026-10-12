@@ -1,6 +1,4 @@
 import Link from "next/link";
-import { Breadcrumb } from "@/components/breadcrumb";
-import { DeleteAllVideosButton } from "@/components/delete-all-videos-button";
 import { DeleteVideoButton } from "@/components/delete-video-button";
 import { VideoCardPreview } from "@/components/video-card-preview";
 import { createServerComponentClient } from "@/lib/supabase/server";
@@ -63,15 +61,9 @@ export default async function VideosPage() {
 
   return (
     <div className="mx-auto max-w-6xl text-[#111827]">
-      <Breadcrumb items={[{ label: "Videos", href: "/videos" }]} />
       <header className="mb-8">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold">Videos</h1>
-            <p className="mt-1 text-sm text-[#6B7280]">Videos generados durante los últimos 30 días.</p>
-          </div>
-          <DeleteAllVideosButton />
-        </div>
+        <h1 className="text-2xl font-bold">Videos</h1>
+        <p className="mt-1 text-sm text-[#6B7280]">Videos generados durante los últimos 30 días.</p>
       </header>
 
       {videos?.length ? (
@@ -84,39 +76,45 @@ export default async function VideosPage() {
             });
 
             return (
-              <article key={video.id} className="rounded-xl bg-white p-6 shadow-sm">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <h2 className="font-semibold text-[#111827]">
-                      {property?.address || "Propiedad sin dirección"}
-                    </h2>
-                    <p className="mt-2 text-sm text-[#6B7280]">{createdAt}</p>
-                  </div>
-                  <span
-                    className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${statusStyles[video.status] ?? statusStyles.pending}`}
-                  >
-                    {statusLabels[video.status] ?? video.status}
-                  </span>
-                </div>
-
-                {video.status === "completed" && video.output_url ? (
-                  <>
-                    <VideoCardPreview src={video.output_url} />
-                    <Link
-                      href={`/videos/${video.id}`}
-                      className="mt-5 inline-flex rounded-lg bg-[#111827] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#1F2937]"
+              <article key={video.id} className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-lg hover:shadow-xl transition-all duration-200">
+                <div className="p-6">
+                  <div className="mb-4 flex items-start justify-between gap-4">
+                    <div>
+                      <h2 className="font-semibold text-[#111827]">
+                        {property?.address || "Propiedad sin dirección"}
+                      </h2>
+                      <p className="mt-2 text-sm text-[#6B7280]">{createdAt}</p>
+                    </div>
+                    <span
+                      className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${statusStyles[video.status] ?? statusStyles.pending}`}
                     >
-                      Ver video
-                    </Link>
-                    <DeleteVideoButton videoId={video.id} />
-                  </>
-                ) : null}
+                      {statusLabels[video.status] ?? video.status}
+                    </span>
+                  </div>
+
+                  {video.status === "completed" && video.output_url ? (
+                    <>
+                      <div className="mb-4 overflow-hidden rounded-2xl">
+                        <VideoCardPreview src={video.output_url} />
+                      </div>
+                      <div className="mt-4 flex gap-3">
+                        <Link
+                          href={`/videos/${video.id}`}
+                          className="inline-flex bg-[#0F172A] text-white rounded-full px-5 py-2 text-sm font-medium hover:bg-[#1E293B] transition-all shadow-md"
+                        >
+                          Ver video
+                        </Link>
+                        <DeleteVideoButton videoId={video.id} />
+                      </div>
+                    </>
+                  ) : null}
+                </div>
               </article>
             );
           })}
         </div>
       ) : (
-        <div className="rounded-xl bg-white p-8 text-center shadow-sm">
+        <div className="rounded-2xl bg-white p-8 text-center shadow-md">
           <p className="font-medium text-[#111827]">No hay videos de los últimos 30 días.</p>
         </div>
       )}
