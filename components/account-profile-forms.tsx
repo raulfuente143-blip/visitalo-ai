@@ -44,7 +44,7 @@ export function AccountProfileForms({
               name="fullName"
               type="text"
               defaultValue={fullName}
-              className="w-full rounded-lg border border-[#E5E7EB] bg-white px-3 py-2.5 text-[#111827] outline-none transition-all focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37] focus:ring-offset-1"
+              className="w-full rounded-lg border border-[#E5E7EB] bg-white px-3 py-2.5 text-[#111827] outline-none transition-all duration-200 focus:scale-[1.005] focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37] focus:ring-offset-1"
             />
           </div>
 
@@ -57,7 +57,7 @@ export function AccountProfileForms({
               type="email"
               value={email}
               readOnly
-              className="w-full cursor-not-allowed rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2.5 text-[#6B7280] transition-all focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37] focus:ring-offset-1"
+              className="w-full cursor-not-allowed rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2.5 text-[#6B7280] transition-all duration-200 focus:scale-[1.005] focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37] focus:ring-offset-1"
             />
           </div>
 
@@ -69,7 +69,7 @@ export function AccountProfileForms({
 
           <button
             type="submit"
-            className="rounded-xl bg-[#111827] px-4 py-2 text-white transition-all duration-200 hover:bg-[#1F2937]"
+            className="rounded-xl bg-[#111827] px-4 py-2 text-white transition-all duration-200 hover:bg-[#1F2937] active:scale-[0.97]"
           >
             Guardar cambios
           </button>
@@ -103,7 +103,7 @@ export function AccountProfileForms({
           type="button"
           onClick={handlePasswordReset}
           disabled={isSendingReset}
-          className="mt-5 rounded-xl border border-[#E5E7EB] px-4 py-2 text-sm font-medium text-[#111827] transition-all duration-200 hover:bg-[#F9FAFB] disabled:cursor-wait disabled:opacity-60"
+          className="mt-5 rounded-xl border border-[#E5E7EB] px-4 py-2 text-sm font-medium text-[#111827] transition-all duration-200 hover:bg-[#F9FAFB] active:scale-[0.97] disabled:cursor-wait disabled:opacity-60"
         >
           {isSendingReset ? "Enviando..." : "Enviar email de cambio de contraseña"}
         </button>

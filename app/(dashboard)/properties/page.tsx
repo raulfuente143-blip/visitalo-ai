@@ -45,7 +45,7 @@ export default async function PropertiesPage() {
 
           <a
             href="/properties/new"
-            className="rounded-full bg-[#D4AF37] px-4 py-2.5 text-sm font-medium text-[#111827] shadow-md transition-all duration-200 hover:shadow-lg"
+            className="rounded-full bg-[#D4AF37] px-4 py-2.5 text-sm font-medium text-[#111827] shadow-md transition-all duration-150 hover:shadow-lg active:scale-[0.97]"
           >
             Nueva propiedad
           </a>
@@ -66,7 +66,7 @@ export default async function PropertiesPage() {
                 </thead>
                 <tbody>
                   {properties.map((property) => (
-                    <tr key={property.id} className="border-b border-[#F3F4F6] transition hover:bg-[#F9FAFB]">
+                    <tr key={property.id} className="border-b border-[#F3F4F6] transition-colors duration-150 hover:bg-slate-50">
                       <td className="px-4 py-4 font-medium text-[#111827]">
                         <a href={`/properties/${property.id}/editor`} className="hover:underline">
                           {property.name}

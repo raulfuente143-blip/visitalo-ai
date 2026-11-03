@@ -76,7 +76,7 @@ export default async function VideosPage() {
             });
 
             return (
-              <article key={video.id} className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-lg hover:shadow-xl transition-all duration-200">
+              <article key={video.id} className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-lg hover:scale-[1.005] hover:shadow-xl transition-transform duration-200">
                 <div className="p-6">
                   <div className="mb-4 flex items-start justify-between gap-4">
                     <div>

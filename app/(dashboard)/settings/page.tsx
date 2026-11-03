@@ -65,7 +65,7 @@ export default async function SettingsPage({
               type="text"
               defaultValue={agency?.name ?? ""}
               required
-              className="w-full rounded-lg border border-[#E5E7EB] bg-white px-3 py-2.5 text-[#111827] outline-none transition-all focus:ring-2 focus:ring-[#D4AF37] focus:ring-offset-1 focus:border-[#D4AF37]"
+              className="w-full rounded-lg border border-[#E5E7EB] bg-white px-3 py-2.5 text-[#111827] outline-none transition-all duration-200 focus:scale-[1.005] focus:ring-2 focus:ring-[#D4AF37] focus:ring-offset-1 focus:border-[#D4AF37]"
             />
           </div>
 
@@ -80,7 +80,7 @@ export default async function SettingsPage({
               name="primaryColor"
               type="color"
               defaultValue={agency?.brand_primary_color ?? "#0F172A"}
-              className="h-12 w-full rounded-xl border border-[#E5E7EB] bg-white p-1 outline-none transition-colors focus:ring-2 focus:ring-[#D4AF37] focus:ring-offset-1 focus:border-[#D4AF37]"
+              className="h-12 w-full rounded-xl border border-[#E5E7EB] bg-white p-1 outline-none transition-all duration-200 focus:scale-[1.005] focus:ring-2 focus:ring-[#D4AF37] focus:ring-offset-1 focus:border-[#D4AF37]"
             />
           </div>
 
@@ -92,7 +92,7 @@ export default async function SettingsPage({
 
           <button
             type="submit"
-            className="rounded-xl bg-[#111827] px-4 py-2 text-white shadow-md transition-all duration-200 hover:shadow-lg hover:bg-[#1F2937]"
+            className="rounded-xl bg-[#111827] px-4 py-2 text-white shadow-md transition-all duration-200 hover:shadow-lg hover:bg-[#1F2937] active:scale-[0.97]"
           >
             Guardar perfil
           </button>

@@ -99,10 +99,10 @@ function NavigationLinkList({
             href={item.href}
             aria-current={isActive ? "page" : undefined}
             className={mobile
-              ? `flex flex-col items-center gap-1 px-1 py-3 text-[11px] transition-colors duration-150 ${isActive ? "text-white" : "text-[#9CA3AF]"}`
+              ? `flex flex-col items-center gap-1 px-1 py-3 text-[11px] transition-all duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] ${isActive ? "text-white" : "text-[#9CA3AF]"}`
               : isActive
-                ? "flex items-center gap-3 mx-3 px-4 py-2.5 text-sm font-medium rounded-xl bg-white/10 text-white border border-white/10 backdrop-blur-sm"
-                : "flex items-center gap-3 mx-3 px-4 py-2.5 text-sm font-medium rounded-xl text-[#9CA3AF] hover:bg-white/5 hover:text-white transition-all duration-150"}
+                ? "flex items-center gap-3 mx-3 px-4 py-2.5 text-sm font-medium rounded-xl bg-white/10 text-white border border-white/10 backdrop-blur-sm transition-all duration-150 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                : "flex items-center gap-3 mx-3 px-4 py-2.5 text-sm font-medium rounded-xl text-[#9CA3AF] hover:bg-white/5 hover:text-white transition-all duration-150 ease-[cubic-bezier(0.16,1,0.3,1)]"}
           >
             <NavigationIcon name={item.icon} />
             <span>{item.label}</span>

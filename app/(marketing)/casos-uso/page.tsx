@@ -1,12 +1,74 @@
-import Link from "next/link";
+import { MarketingNav } from "@/components/marketing-nav";
+import { MarketingFooter } from "@/components/marketing-footer";
 
-export default function UseCasesPage() {
+const soluciones = [
+  {
+    text: "El vídeo se genera el mismo día de la visita.",
+    result: "De días a horas.",
+  },
+  {
+    text: "Cada vídeo incluye el logo, el color y la identidad de la agencia.",
+    result: "Una imagen coherente en cada propiedad.",
+  },
+  {
+    text: "Una cuota mensual fija cubre toda la producción visual del equipo.",
+    result: "Un coste predecible.",
+  },
+  {
+    text: "El comercial sube el plano y las fotos. Visitalo.ai hace el resto.",
+    result: "El equipo se dedica a vender.",
+  },
+];
+
+export default function CasosDeUso() {
   return (
-    <main className="flex min-h-screen flex-col items-start justify-center bg-[#0F172A] px-8 text-white md:px-16">
-      <h1 className="text-4xl font-bold md:text-6xl">Casos de uso</h1>
-      <Link href="/" className="mt-8 text-[#D4AF37] transition-colors hover:text-white">
-        ← Volver al inicio
-      </Link>
-    </main>
+    <div className="min-h-screen bg-[#0F172A] text-white">
+      <MarketingNav />
+      <main className="min-h-screen flex items-center px-8 md:px-16 pt-24 pb-10">
+        <div className="w-full max-w-6xl mx-auto grid md:grid-cols-2 gap-10 md:gap-20 items-center">
+          <div className="page-enter">
+            <p className="text-[#D4AF37] text-xs font-medium tracking-[0.3em] uppercase mb-5">
+              Casos de uso
+            </p>
+            <h1
+              className="text-4xl md:text-5xl font-bold leading-[1.05] display-text"
+              style={{ fontFamily: "'Playfair Display', serif", letterSpacing: "-0.03em" }}
+            >
+              El problema<br />es el proceso.
+            </h1>
+            <p className="text-sm md:text-base text-[#94A3B8] leading-relaxed mt-4 max-w-md">
+              Publicar una propiedad con contenido visual profesional lleva días y depende de
+              terceros. Visitalo.ai elimina esa dependencia.
+            </p>
+
+            <div className="mt-6 w-full max-w-[560px] overflow-hidden rounded-2xl border border-white/10 bg-black/40 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.6)]">
+              <video
+                className="block aspect-video w-full object-cover"
+                src="/videos/casos-uso.mp4"
+                poster="/videos/casos-uso-poster.jpg"
+                autoPlay
+                muted
+                loop
+                playsInline
+                controls
+                preload="metadata"
+                aria-label="Vídeo: cómo funciona Visitalo.ai"
+              />
+            </div>
+          </div>
+
+          <div className="page-enter-delay-1">
+            {soluciones.map((s, i) => (
+              <div key={i} className="border-t border-white/10 py-5 first:border-t-0 first:pt-0">
+                <p className="text-xs text-[#D4AF37] font-medium tracking-widest mb-2">0{i + 1}</p>
+                <p className="text-white text-lg md:text-xl leading-snug mb-2">{s.text}</p>
+                <p className="text-[#D4AF37] text-sm font-medium">{s.result}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </main>
+      <MarketingFooter />
+    </div>
   );
 }

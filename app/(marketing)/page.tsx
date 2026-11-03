@@ -1,30 +1,12 @@
 import Link from "next/link";
+import { MarketingNav } from "@/components/marketing-nav";
 
 export default function LandingPage() {
   return (
     <div className="flex flex-col bg-[#0F172A]">
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&display=swap');`}</style>
 
-      <nav
-        className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 md:px-16 py-5 border-b border-white/5"
-        style={{
-          background: "rgba(15, 23, 42, 0.75)",
-          backdropFilter: "blur(20px) saturate(180%)",
-          WebkitBackdropFilter: "blur(20px) saturate(180%)",
-          borderTop: "1px solid rgba(255,255,255,0.08)",
-        }}
-      >
-        <Link href="/" className="text-xl font-bold tracking-tight text-white">
-          Visitalo<span className="text-[#D4AF37]">.ai</span>
-        </Link>
-        <div className="flex items-center gap-4 md:gap-6">
-          <Link href="/quienes-somos" className="hidden text-sm text-[#9CA3AF] transition-colors hover:text-white md:inline">Quiénes somos</Link>
-          <Link href="/casos-uso" className="hidden text-sm text-[#9CA3AF] transition-colors hover:text-white md:inline">Casos de uso</Link>
-          <Link href="/planes" className="hidden text-sm text-[#9CA3AF] transition-colors hover:text-white md:inline">Planes</Link>
-          <Link href="/login" className="text-sm text-[#9CA3AF] transition-colors hover:text-white">Iniciar sesión</Link>
-          <Link href="/register" className="rounded-full bg-[#D4AF37] px-5 py-2.5 text-sm font-semibold text-[#0F172A] shadow-lg transition-all hover:bg-[#B8960C]">Empieza gratis</Link>
-        </div>
-      </nav>
+      <MarketingNav />
 
       <section
         className="h-screen relative overflow-hidden flex items-center"
@@ -61,23 +43,30 @@ export default function LandingPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-[#0F172A]/60 via-[#0F172A]/40 to-transparent" />
         <div className="relative z-10 max-w-2xl px-8 pb-16 pt-24 md:px-16">
           <h1
-            className="hero-content text-5xl md:text-7xl font-bold text-white mb-6"
+            className="text-6xl md:text-8xl font-bold text-white mb-6 hero-content display-text"
             style={{
               fontFamily: "'Playfair Display', serif",
               letterSpacing: "-0.03em",
               lineHeight: "1.05",
             }}
           >
-            Tu <span className="text-[#D4AF37]">filmmaker,</span>
+            Tu <span className="text-[#D4AF37]">filmmaker</span><span className="text-white">,</span>
             <br />
-            siempre disponible.
+            a demanda.
           </h1>
-          <p className="hero-content-delay mb-8 max-w-xl text-lg leading-relaxed text-[#94A3B8]">
-            Olvídate de pagar 500€ por sesión. Sube el plano, añade las fotos y obtén un video profesional con tu marca en menos de 10 minutos.
+          <p className="text-lg max-w-xl mb-8 leading-relaxed hero-content-delay text-white/80 [text-shadow:0_1px_12px_rgba(0,0,0,0.45)]">
+            Videos inmobiliarios profesionales.
+            <br />
+            Sin esperas, sin presupuestos, sin filmmaker.
           </p>
           <div className="hero-buttons mb-6 flex flex-wrap gap-4">
             <Link href="/register" className="button-press rounded-full bg-[#D4AF37] px-8 py-4 text-base font-bold text-[#0F172A] shadow-xl transition-all hover:bg-[#B8960C]">Crear mi primer video</Link>
-            <Link href="/casos-uso" className="button-press rounded-full border border-white/20 px-8 py-4 text-base text-white transition-all hover:bg-white/5">Ver cómo funciona</Link>
+            <Link
+              href="/casos-uso"
+              className="border border-white/20 text-white px-8 py-4 rounded-full text-base hover:bg-white/5 transition-all button-press"
+            >
+              Ver cómo funciona
+            </Link>
           </div>
         </div>
       </section>

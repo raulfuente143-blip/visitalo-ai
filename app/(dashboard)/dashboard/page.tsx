@@ -84,10 +84,10 @@ export default async function DashboardPage() {
     <div className="min-h-full text-[#111827]">
       <div className="mx-auto max-w-6xl">
         <header className="mb-8 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-[#111827]">Inicio</h1>
+          <h1 className="page-enter text-2xl font-bold text-[#111827]">Inicio</h1>
         </header>
 
-        <section className="mb-8 rounded-2xl bg-white p-6 shadow-md transition-shadow hover:shadow-lg">
+        <section className="mb-8 rounded-2xl bg-white p-6 shadow-md transition-transform duration-200 hover:scale-[1.01] hover:shadow-lg">
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-sm text-[#6B7280]">Plan actual</p>
@@ -111,19 +111,19 @@ export default async function DashboardPage() {
         </section>
 
         <section className="grid gap-5 md:grid-cols-3">
-          <div className="rounded-2xl bg-white p-6 shadow-md transition-shadow hover:shadow-lg">
+          <div className="rounded-2xl bg-white p-6 shadow-md transition-transform duration-200 hover:scale-[1.01] hover:shadow-lg">
             <p className="text-sm text-[#6B7280]">Videos usados</p>
             <p className="mt-3 text-3xl font-bold text-[#111827]">{videosUsed}</p>
             <p className="mt-1 text-sm text-[#6B7280]">/ {videoLimit}</p>
           </div>
 
-          <div className="rounded-2xl bg-white p-6 shadow-md transition-shadow hover:shadow-lg">
+          <div className="rounded-2xl bg-white p-6 shadow-md transition-transform duration-200 hover:scale-[1.01] hover:shadow-lg">
             <p className="text-sm text-[#6B7280]">Fotos usadas</p>
             <p className="mt-3 text-3xl font-bold text-[#111827]">{photosUsed}</p>
             <p className="mt-1 text-sm text-[#6B7280]">/ {photoLimit}</p>
           </div>
 
-          <div className="rounded-2xl bg-white p-6 shadow-md transition-shadow hover:shadow-lg">
+          <div className="rounded-2xl bg-white p-6 shadow-md transition-transform duration-200 hover:scale-[1.01] hover:shadow-lg">
             <p className="text-sm text-[#6B7280]">Créditos disponibles</p>
             <p className="mt-3 text-3xl font-bold text-[#111827]">{creditsAvailable}</p>
             <p className="mt-1 text-sm text-[#6B7280]">Este mes</p>
