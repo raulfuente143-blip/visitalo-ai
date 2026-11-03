@@ -1,5 +1,6 @@
 import { MarketingNav } from "@/components/marketing-nav";
 import { MarketingFooter } from "@/components/marketing-footer";
+import AmbientVideo from "@/components/ambient-video";
 
 const soluciones = [
   {
@@ -42,17 +43,10 @@ export default function CasosDeUso() {
             </p>
 
             <div className="mt-6 w-full max-w-[560px] overflow-hidden rounded-2xl border border-white/10 bg-black/40 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.6)]">
-              <video
-                className="block aspect-video w-full object-cover"
+              <AmbientVideo
                 src="/videos/casos-uso.mp4"
                 poster="/videos/casos-uso-poster.jpg"
-                autoPlay
-                muted
-                loop
-                playsInline
-                controls
-                preload="metadata"
-                aria-label="Vídeo: cómo funciona Visitalo.ai"
+                className="pointer-events-none block aspect-video w-full select-none object-cover"
               />
             </div>
           </div>
