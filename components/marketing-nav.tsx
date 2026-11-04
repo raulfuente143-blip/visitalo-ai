@@ -80,7 +80,7 @@ export function MarketingNav() {
           <Link
             href="/register"
             onClick={close}
-            className="rounded-full bg-[#D4AF37] px-4 py-2 text-[13px] font-semibold text-[#0F172A] transition-all hover:bg-[#B8960C]"
+            className={`rounded-full bg-[#D4AF37] px-4 py-2 text-[13px] font-semibold text-[#0F172A] transition-all duration-200 hover:bg-[#B8960C] ${open ? "pointer-events-none opacity-0" : "opacity-100"}`}
           >
             Empieza gratis
           </Link>
@@ -124,7 +124,7 @@ export function MarketingNav() {
           }`}
         >
           <ul className="space-y-1">
-            {[...sections, { label: "Iniciar sesión", href: "/login" }].map((item) => {
+            {sections.map((item) => {
               const isActive = pathname === item.href;
               return (
                 <li key={item.href}>
@@ -144,7 +144,7 @@ export function MarketingNav() {
             })}
           </ul>
 
-          <div className="mt-auto">
+          <div className="mt-auto space-y-5">
             <Link
               href="/register"
               onClick={close}
@@ -152,6 +152,12 @@ export function MarketingNav() {
             >
               Crear mi primer video
             </Link>
+            <p className="text-center text-sm text-[#94A3B8]">
+              ¿Ya tienes cuenta?{" "}
+              <Link href="/login" onClick={close} className="font-medium text-white transition-colors hover:text-[#D4AF37]">
+                Iniciar sesión
+              </Link>
+            </p>
           </div>
         </div>
       </div>

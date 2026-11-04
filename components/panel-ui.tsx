@@ -2,11 +2,11 @@ import type { ReactNode } from "react";
 
 export const buttonStyles = {
   primary:
-    "inline-flex items-center justify-center rounded-full bg-[#D4AF37] px-5 py-2.5 text-sm font-semibold text-[#0F172A] shadow-sm transition-colors hover:bg-[#B8960C]",
+    "inline-flex items-center justify-center whitespace-nowrap rounded-full bg-[#D4AF37] px-4 py-2.5 text-sm sm:px-5 font-semibold text-[#0F172A] shadow-sm transition-colors hover:bg-[#B8960C]",
   dark:
-    "inline-flex items-center justify-center rounded-full bg-[#0F172A] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#1E293B]",
+    "inline-flex items-center justify-center whitespace-nowrap rounded-full bg-[#0F172A] px-4 py-2.5 text-sm sm:px-5 font-medium text-white transition-colors hover:bg-[#1E293B]",
   secondary:
-    "inline-flex items-center justify-center rounded-full border border-[#E5E7EB] bg-white px-5 py-2.5 text-sm font-medium text-[#0F172A] transition-colors hover:bg-[#F9FAFB]",
+    "inline-flex items-center justify-center whitespace-nowrap rounded-full border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm sm:px-5 font-medium text-[#0F172A] transition-colors hover:bg-[#F9FAFB]",
 };
 
 export const inputStyles =
