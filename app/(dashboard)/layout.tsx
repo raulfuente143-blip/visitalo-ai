@@ -14,9 +14,11 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   }
 
   return (
-    <div className="flex min-h-screen bg-[#FAFAFA]">
+    <div className="min-h-screen bg-[#FAFAFA] md:flex">
       <Sidebar email={user.email ?? ""} />
-      <main className="ml-0 flex-1 min-h-screen overflow-auto bg-[#FAFAFA] p-8 pb-24 md:ml-[240px] md:pb-8">{children}</main>
+      <main className="min-w-0 flex-1 bg-[#FAFAFA] px-5 pt-6 pb-[calc(6.5rem+env(safe-area-inset-bottom))] text-[#0F172A] sm:px-6 md:ml-[240px] md:px-10 md:pt-10 md:pb-12">
+        {children}
+      </main>
     </div>
   );
 }

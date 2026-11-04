@@ -1,6 +1,14 @@
 import { AccountProfileForms } from "@/components/account-profile-forms";
 import { createServerComponentClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { signOut } from "@/app/actions/auth";
+import { Card, PageHeader } from "@/components/panel-ui";
+
+const legalLinks = [
+  { label: "Política de privacidad", href: "/legal/privacidad" },
+  { label: "Política de cookies", href: "/legal/cookies" },
+  { label: "Términos y condiciones", href: "/legal/terminos" },
+];
 
 export default async function AccountPage() {
   const supabase = await createServerComponentClient();
@@ -14,35 +22,49 @@ export default async function AccountPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl text-[#111827]">
-      <header className="mb-8">
-        <h1 className="text-2xl font-bold">Mi cuenta</h1>
-        <p className="mt-1 text-sm text-[#6B7280]">Administra tus datos personales y opciones de seguridad.</p>
-      </header>
+    <div className="mx-auto max-w-3xl">
+      <PageHeader title="Ajustes" description="Tus datos personales, la seguridad de la cuenta y la sesión." />
 
-      <AccountProfileForms
-        fullName={typeof user.user_metadata?.full_name === "string" ? user.user_metadata.full_name : ""}
-        email={user.email ?? ""}
-      />
+      <div className="space-y-5">
+        <AccountProfileForms
+          fullName={typeof user.user_metadata?.full_name === "string" ? user.user_metadata.full_name : ""}
+          email={user.email ?? ""}
+        />
 
-      <section className="mt-6 rounded-2xl bg-white p-6 shadow-md">
-        <h2 className="mb-1 text-lg font-semibold text-[#111827]">Legal</h2>
-        <p className="mb-4 text-sm text-[#6B7280]">Documentos legales y política de privacidad.</p>
-        <div className="space-y-3">
-          <a href="/legal/privacidad" target="_blank" className="flex items-center justify-between rounded-lg border border-[#E5E7EB] p-3 transition-all duration-200 hover:bg-[#F9FAFB]">
-            <span className="text-sm text-[#111827]">Política de privacidad</span>
-            <span className="text-[#9CA3AF]">→</span>
-          </a>
-          <a href="/legal/cookies" target="_blank" className="flex items-center justify-between rounded-lg border border-[#E5E7EB] p-3 transition-all duration-200 hover:bg-[#F9FAFB]">
-            <span className="text-sm text-[#111827]">Política de cookies</span>
-            <span className="text-[#9CA3AF]">→</span>
-          </a>
-          <a href="/legal/terminos" target="_blank" className="flex items-center justify-between rounded-lg border border-[#E5E7EB] p-3 transition-all duration-200 hover:bg-[#F9FAFB]">
-            <span className="text-sm text-[#111827]">Términos y condiciones</span>
-            <span className="text-[#9CA3AF]">→</span>
-          </a>
-        </div>
-      </section>
+        <Card>
+          <h2 className="text-lg font-semibold text-[#0F172A]">Legal</h2>
+          <p className="mt-1 text-sm text-[#6B7280]">Documentos legales y política de privacidad.</p>
+          <div className="mt-4 divide-y divide-[#F1F1F1] overflow-hidden rounded-xl border border-[#E5E7EB]">
+            {legalLinks.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between px-4 py-3.5 text-sm text-[#0F172A] transition-colors hover:bg-[#F9FAFB]"
+              >
+                <span>{link.label}</span>
+                <span aria-hidden="true" className="text-[#9CA3AF]">
+                  →
+                </span>
+              </a>
+            ))}
+          </div>
+        </Card>
+
+        <Card>
+          <h2 className="text-lg font-semibold text-[#0F172A]">Sesión</h2>
+          <p className="mt-1 text-sm text-[#6B7280]">Cierra tu sesión en este dispositivo.</p>
+          <form action={signOut} className="mt-4">
+            <button
+              type="submit"
+              className="inline-flex w-full items-center justify-center rounded-full border border-red-200 bg-white px-5 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 sm:w-auto"
+            >
+              Cerrar sesión
+            </button>
+          </form>
+        </Card>
+      </div>
     </div>
   );
 }

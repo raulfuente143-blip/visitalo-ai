@@ -1,8 +1,31 @@
 import Link from "next/link";
 import { createServerComponentClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { Card, PageHeader, buttonStyles } from "@/components/panel-ui";
 
 export const dynamic = "force-dynamic";
+
+function StatCard({
+  label,
+  value,
+  detail,
+  className = "",
+}: {
+  label: string;
+  value: number | string;
+  detail: string;
+  className?: string;
+}) {
+  return (
+    <Card className={className}>
+      <p className="text-xs font-medium text-[#6B7280] sm:text-sm">{label}</p>
+      <p className="mt-2 flex items-baseline gap-1.5">
+        <span className="text-3xl font-semibold tracking-tight tabular-nums text-[#0F172A]">{value}</span>
+        <span className="text-sm text-[#9CA3AF]">{detail}</span>
+      </p>
+    </Card>
+  );
+}
 
 export default async function DashboardPage() {
   const supabase = await createServerComponentClient();
@@ -81,55 +104,41 @@ export default async function DashboardPage() {
   const creditsAvailable = usagePeriod?.credits_available ?? creditLimit;
 
   return (
-    <div className="min-h-full text-[#111827]">
-      <div className="mx-auto max-w-6xl">
-        <header className="mb-8 flex items-center justify-between">
-          <h1 className="page-enter text-2xl font-bold text-[#111827]">Inicio</h1>
-        </header>
+    <div className="mx-auto max-w-6xl">
+      <PageHeader
+        title="Inicio"
+        description="Tu actividad de este mes."
+        action={
+          <Link href="/properties/new" className={`${buttonStyles.primary} w-full sm:w-auto`}>
+            Nueva propiedad
+          </Link>
+        }
+      />
 
-        <section className="mb-8 rounded-2xl bg-white p-6 shadow-md transition-transform duration-200 hover:scale-[1.01] hover:shadow-lg">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-sm text-[#6B7280]">Plan actual</p>
-              <p className="mt-1 text-xl font-bold text-[#111827]">{plan?.name ?? "Sin plan"}</p>
-            </div>
-            <div className="flex gap-3">
-              <Link
-                href="/properties"
-                className="rounded-lg border border-[#E5E7EB] px-4 py-2 text-sm font-medium text-[#111827] transition hover:bg-[#F9FAFB]"
-              >
-                Ver propiedades
-              </Link>
-              <a
-                href="/billing"
-                className="rounded-lg border border-[#E5E7EB] px-4 py-2 text-sm font-medium text-[#6B7280] transition hover:bg-[#F9FAFB]"
-              >
-                Cambiar plan
-              </a>
-            </div>
-          </div>
-        </section>
+      <Card className="mb-5 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-sm text-[#6B7280]">Plan actual</p>
+          <p className="mt-1 text-xl font-semibold tracking-tight text-[#0F172A]">{plan?.name ?? "Sin plan"}</p>
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:flex">
+          <Link href="/properties" className={buttonStyles.secondary}>
+            Ver propiedades
+          </Link>
+          <a href="/billing" className={buttonStyles.secondary}>
+            Cambiar plan
+          </a>
+        </div>
+      </Card>
 
-        <section className="grid gap-5 md:grid-cols-3">
-          <div className="rounded-2xl bg-white p-6 shadow-md transition-transform duration-200 hover:scale-[1.01] hover:shadow-lg">
-            <p className="text-sm text-[#6B7280]">Videos usados</p>
-            <p className="mt-3 text-3xl font-bold text-[#111827]">{videosUsed}</p>
-            <p className="mt-1 text-sm text-[#6B7280]">/ {videoLimit}</p>
-          </div>
-
-          <div className="rounded-2xl bg-white p-6 shadow-md transition-transform duration-200 hover:scale-[1.01] hover:shadow-lg">
-            <p className="text-sm text-[#6B7280]">Fotos usadas</p>
-            <p className="mt-3 text-3xl font-bold text-[#111827]">{photosUsed}</p>
-            <p className="mt-1 text-sm text-[#6B7280]">/ {photoLimit}</p>
-          </div>
-
-          <div className="rounded-2xl bg-white p-6 shadow-md transition-transform duration-200 hover:scale-[1.01] hover:shadow-lg">
-            <p className="text-sm text-[#6B7280]">Créditos disponibles</p>
-            <p className="mt-3 text-3xl font-bold text-[#111827]">{creditsAvailable}</p>
-            <p className="mt-1 text-sm text-[#6B7280]">Este mes</p>
-          </div>
-        </section>
-
+      <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
+        <StatCard label="Videos usados" value={videosUsed} detail={`de ${videoLimit}`} />
+        <StatCard label="Fotos usadas" value={photosUsed} detail={`de ${photoLimit}`} />
+        <StatCard
+          label="Créditos disponibles"
+          value={creditsAvailable}
+          detail="este mes"
+          className="col-span-2 lg:col-span-1"
+        />
       </div>
     </div>
   );

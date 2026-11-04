@@ -2,6 +2,7 @@ import { saveAgencyProfile } from "@/app/actions/auth";
 import { OnboardingLogoUploader } from "@/components/onboarding-logo-uploader";
 import { createServerComponentClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { Card, PageHeader, buttonStyles, inputStyles, labelStyles } from "@/components/panel-ui";
 
 export default async function SettingsPage({
   searchParams,
@@ -37,26 +38,26 @@ export default async function SettingsPage({
     : { data: null };
 
   return (
-    <div className="mx-auto max-w-4xl text-[#111827]">
-      <header className="mb-8">
-        <h1 className="text-2xl font-bold">Personalizar tu agencia</h1>
-        <p className="mt-1 text-sm text-[#6B7280]">Actualiza el logo y color de marca de tu agencia.</p>
-      </header>
+    <div className="mx-auto max-w-3xl">
+      <PageHeader
+        title="Personalizar"
+        description="El nombre, el logo y el color de marca que aparecen en tus videos."
+      />
 
       {saved ? (
-        <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+        <div className="mb-5 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
           ✓ Cambios guardados correctamente
         </div>
       ) : null}
 
-      <section className="rounded-2xl bg-white p-6 shadow-md">
-        <h2 className="mb-5 text-xl font-bold text-[#111827]">
-          {agency ? "Editar perfil de la agencia" : "Configurar perfil de la agencia"}
+      <Card>
+        <h2 className="mb-5 text-lg font-semibold text-[#0F172A]">
+          {agency ? "Perfil de la agencia" : "Configura el perfil de la agencia"}
         </h2>
 
         <form action={saveAgencyProfile} className="space-y-6">
           <div>
-            <label htmlFor="agencyName" className="mb-2 block text-sm font-medium text-[#6B7280]">
+            <label htmlFor="agencyName" className={labelStyles}>
               Nombre de la agencia
             </label>
             <input
@@ -65,14 +66,14 @@ export default async function SettingsPage({
               type="text"
               defaultValue={agency?.name ?? ""}
               required
-              className="w-full rounded-lg border border-[#E5E7EB] bg-white px-3 py-2.5 text-[#111827] outline-none transition-all duration-200 focus:scale-[1.005] focus:ring-2 focus:ring-[#D4AF37] focus:ring-offset-1 focus:border-[#D4AF37]"
+              className={inputStyles}
             />
           </div>
 
           <OnboardingLogoUploader initialLogoUrl={agency?.logo_url ?? undefined} />
 
           <div>
-            <label htmlFor="brandColor" className="mb-2 block text-sm font-medium text-[#6B7280]">
+            <label htmlFor="brandColor" className={labelStyles}>
               Color de marca
             </label>
             <input
@@ -80,24 +81,19 @@ export default async function SettingsPage({
               name="primaryColor"
               type="color"
               defaultValue={agency?.brand_primary_color ?? "#0F172A"}
-              className="h-12 w-full rounded-xl border border-[#E5E7EB] bg-white p-1 outline-none transition-all duration-200 focus:scale-[1.005] focus:ring-2 focus:ring-[#D4AF37] focus:ring-offset-1 focus:border-[#D4AF37]"
+              className="h-12 w-full cursor-pointer rounded-xl border border-[#E5E7EB] bg-white p-1 outline-none transition focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/30"
             />
           </div>
 
           {error ? (
-            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-              {error}
-            </p>
+            <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
           ) : null}
 
-          <button
-            type="submit"
-            className="rounded-xl bg-[#111827] px-4 py-2 text-white shadow-md transition-all duration-200 hover:shadow-lg hover:bg-[#1F2937] active:scale-[0.97]"
-          >
-            Guardar perfil
+          <button type="submit" className={`${buttonStyles.dark} w-full sm:w-auto`}>
+            Guardar cambios
           </button>
         </form>
-      </section>
+      </Card>
     </div>
   );
 }

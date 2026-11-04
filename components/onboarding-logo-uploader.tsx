@@ -109,7 +109,7 @@ export function OnboardingLogoUploader({ initialLogoUrl }: { initialLogoUrl?: st
 
   return (
     <div>
-      <label className="mb-2 block text-sm font-medium text-slate-700">Logo de la agencia</label>
+      <label className="mb-2 block text-sm font-medium text-[#6B7280]">Logo de la agencia</label>
 
       <div
         onDrop={(event) => {
@@ -124,29 +124,29 @@ export function OnboardingLogoUploader({ initialLogoUrl }: { initialLogoUrl?: st
         onDragLeave={() => setIsDragging(false)}
         onPaste={handlePaste}
         className={`rounded-2xl border-2 border-dashed p-5 transition ${
-          isDragging ? "border-sky-500 bg-sky-50" : "border-slate-300 bg-slate-50"
+          isDragging ? "border-[#D4AF37] bg-[#D4AF37]/5" : "border-[#E5E7EB] bg-[#FAFAFA]"
         }`}
       >
         <div className="flex flex-col items-center justify-center gap-3 text-center">
           {previewUrl ? (
-            <img src={previewUrl} alt="Preview del logo" className="h-24 w-24 rounded-xl object-cover" />
+            <img src={previewUrl} alt="Preview del logo" className="h-24 w-24 rounded-xl object-contain" />
           ) : (
-            <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-slate-200 text-2xl">
+            <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-[#F1F1F1] text-2xl">
               🖼️
             </div>
           )}
 
           <div>
-            <p className="text-sm font-medium text-slate-700">
+            <p className="text-sm font-medium text-[#0F172A]">
               Arrastra aquí tu logo, pégalo o sube uno desde tu dispositivo
             </p>
-            <p className="mt-1 text-xs text-slate-500">PNG con fondo transparente para mejor resultado en los videos</p>
+            <p className="mt-1 text-xs text-[#6B7280]">PNG con fondo transparente para mejor resultado en los videos</p>
           </div>
 
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+            className="rounded-full bg-[#0F172A] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#1E293B]"
           >
             Elegir archivo
           </button>
@@ -164,8 +164,8 @@ export function OnboardingLogoUploader({ initialLogoUrl }: { initialLogoUrl?: st
       </div>
 
       {selectedFile ? (
-        <p className="mt-3 text-xs text-slate-500">
-          {isUploading ? "Subiendo al bucket logos..." : "La imagen está lista para adjuntarse al onboarding."}
+        <p className="mt-3 text-xs text-[#6B7280]">
+          {isUploading ? "Subiendo logo…" : "Logo listo. Guarda los cambios para aplicarlo."}
         </p>
       ) : null}
     </div>

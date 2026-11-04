@@ -91,24 +91,28 @@ function NavigationLinkList({
   const pathname = usePathname();
 
   return items.map((item) => {
-      const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+    const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
 
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            aria-current={isActive ? "page" : undefined}
-            className={mobile
-              ? `flex flex-col items-center gap-1 px-1 py-3 text-[11px] transition-all duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] ${isActive ? "text-white" : "text-[#9CA3AF]"}`
-              : isActive
-                ? "flex items-center gap-3 mx-3 px-4 py-2.5 text-sm font-medium rounded-xl bg-white/10 text-white border border-white/10 backdrop-blur-sm transition-all duration-150 ease-[cubic-bezier(0.16,1,0.3,1)]"
-                : "flex items-center gap-3 mx-3 px-4 py-2.5 text-sm font-medium rounded-xl text-[#9CA3AF] hover:bg-white/5 hover:text-white transition-all duration-150 ease-[cubic-bezier(0.16,1,0.3,1)]"}
-          >
-            <NavigationIcon name={item.icon} />
-            <span>{item.label}</span>
-          </Link>
-        );
-      });
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        aria-current={isActive ? "page" : undefined}
+        className={
+          mobile
+            ? `flex flex-col items-center gap-1 px-1 pt-2.5 pb-2 text-[10px] font-medium transition-colors duration-150 ${
+                isActive ? "text-[#D4AF37]" : "text-[#94A3B8]"
+              }`
+            : isActive
+              ? "flex items-center gap-3 mx-3 px-4 py-2.5 text-sm font-medium rounded-xl bg-white/10 text-white border border-white/10 backdrop-blur-sm transition-all duration-150 ease-[cubic-bezier(0.16,1,0.3,1)]"
+              : "flex items-center gap-3 mx-3 px-4 py-2.5 text-sm font-medium rounded-xl text-[#9CA3AF] hover:bg-white/5 hover:text-white transition-all duration-150 ease-[cubic-bezier(0.16,1,0.3,1)]"
+        }
+      >
+        <NavigationIcon name={item.icon} />
+        <span>{item.label}</span>
+      </Link>
+    );
+  });
 }
 
 function NavigationLinks({ mobile = false }: { mobile?: boolean }) {
@@ -134,8 +138,10 @@ export function Sidebar({ email }: { email: string }) {
     <>
       <aside className="hidden md:flex min-h-screen w-[240px] shrink-0 flex-col bg-gradient-to-b from-[#0F172A] to-[#1a1f2e] border-r border-white/5 shadow-2xl fixed top-0 left-0 h-screen z-40 overflow-y-auto">
         <div className="px-6 py-7">
-          <span className="text-2xl font-bold tracking-tight text-white">Visitalo</span>
-          <span className="text-2xl font-bold tracking-tight text-[#D4AF37]">.ai</span>
+          <Link href="/dashboard" className="text-2xl font-bold tracking-tight">
+            <span className="text-white">Visitalo</span>
+            <span className="text-[#D4AF37]">.ai</span>
+          </Link>
         </div>
         <div className="mt-3 flex flex-1 flex-col">
           <NavigationLinks />
@@ -154,7 +160,14 @@ export function Sidebar({ email }: { email: string }) {
         </div>
       </aside>
 
-      <div className="fixed inset-x-0 bottom-0 z-50 bg-[#111827] md:hidden">
+      <header className="sticky top-0 z-40 flex items-center justify-between gap-4 border-b border-black/[0.06] bg-[#FAFAFA]/85 px-5 py-3.5 backdrop-blur-xl md:hidden">
+        <Link href="/dashboard" className="text-lg font-bold tracking-tight text-[#0F172A]">
+          Visitalo<span className="text-[#D4AF37]">.ai</span>
+        </Link>
+        <span className="min-w-0 truncate text-xs text-[#6B7280]">{email}</span>
+      </header>
+
+      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-[#0F172A]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden">
         <NavigationLinks mobile />
       </div>
     </>

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { sendPasswordReset, signOut, updateUserProfile } from "@/app/actions/auth";
+import { sendPasswordReset, updateUserProfile } from "@/app/actions/auth";
+import { Card, buttonStyles, inputStyles, labelStyles } from "@/components/panel-ui";
 
 export function AccountProfileForms({
   fullName,
@@ -31,25 +32,26 @@ export function AccountProfileForms({
   };
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-2xl bg-white p-6 shadow-md">
-        <h2 className="mb-5 text-xl font-bold text-[#111827]">Información personal</h2>
+    <div className="space-y-5">
+      <Card>
+        <h2 className="mb-5 text-lg font-semibold text-[#0F172A]">Información personal</h2>
         <form action={handleProfileSubmit} className="space-y-5">
           <div>
-            <label htmlFor="fullName" className="mb-2 block text-sm font-medium text-[#6B7280]">
+            <label htmlFor="fullName" className={labelStyles}>
               Nombre completo
             </label>
             <input
               id="fullName"
               name="fullName"
               type="text"
+              autoComplete="name"
               defaultValue={fullName}
-              className="w-full rounded-lg border border-[#E5E7EB] bg-white px-3 py-2.5 text-[#111827] outline-none transition-all duration-200 focus:scale-[1.005] focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37] focus:ring-offset-1"
+              className={inputStyles}
             />
           </div>
 
           <div>
-            <label htmlFor="email" className="mb-2 block text-sm font-medium text-[#6B7280]">
+            <label htmlFor="email" className={labelStyles}>
               Email
             </label>
             <input
@@ -57,7 +59,7 @@ export function AccountProfileForms({
               type="email"
               value={email}
               readOnly
-              className="w-full cursor-not-allowed rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2.5 text-[#6B7280] transition-all duration-200 focus:scale-[1.005] focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37] focus:ring-offset-1"
+              className="w-full cursor-not-allowed rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-4 py-3 text-base text-[#6B7280] outline-none"
             />
           </div>
 
@@ -67,33 +69,15 @@ export function AccountProfileForms({
             </p>
           ) : null}
 
-          <button
-            type="submit"
-            className="rounded-xl bg-[#111827] px-4 py-2 text-white transition-all duration-200 hover:bg-[#1F2937] active:scale-[0.97]"
-          >
+          <button type="submit" className={`${buttonStyles.dark} w-full sm:w-auto`}>
             Guardar cambios
           </button>
         </form>
-      </section>
+      </Card>
 
-      <div className="mt-6 rounded-2xl bg-white p-6 shadow-md">
-        <h2 className="mb-1 text-lg font-semibold text-[#111827]">Sesión</h2>
-        <p className="mb-4 text-sm text-[#6B7280]">Cierra tu sesión en este dispositivo.</p>
-        <form action={signOut}>
-          <button
-            type="submit"
-            className="rounded-xl bg-red-500 px-5 py-2.5 font-medium text-white shadow-md transition-all duration-200 hover:bg-red-600 hover:shadow-lg"
-          >
-            Cerrar sesión
-          </button>
-        </form>
-      </div>
-
-      <section className="rounded-2xl bg-white p-6 shadow-md">
-        <h2 className="text-xl font-bold text-[#111827]">Seguridad</h2>
-        <p className="mt-1 text-sm text-[#6B7280]">
-          Solicita un enlace por email para cambiar tu contraseña.
-        </p>
+      <Card>
+        <h2 className="text-lg font-semibold text-[#0F172A]">Seguridad</h2>
+        <p className="mt-1 text-sm text-[#6B7280]">Te enviamos un enlace por email para cambiar tu contraseña.</p>
         {resetMessage ? (
           <p className="mt-4 text-sm text-emerald-700" role="status">
             {resetMessage}
@@ -103,11 +87,11 @@ export function AccountProfileForms({
           type="button"
           onClick={handlePasswordReset}
           disabled={isSendingReset}
-          className="mt-5 rounded-xl border border-[#E5E7EB] px-4 py-2 text-sm font-medium text-[#111827] transition-all duration-200 hover:bg-[#F9FAFB] active:scale-[0.97] disabled:cursor-wait disabled:opacity-60"
+          className={`${buttonStyles.secondary} mt-4 w-full disabled:cursor-wait disabled:opacity-60 sm:w-auto`}
         >
-          {isSendingReset ? "Enviando..." : "Enviar email de cambio de contraseña"}
+          {isSendingReset ? "Enviando..." : "Cambiar contraseña"}
         </button>
-      </section>
+      </Card>
     </div>
   );
 }
