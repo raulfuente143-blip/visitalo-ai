@@ -43,7 +43,7 @@ export default function Planes() {
               <h2 className="text-xl font-bold text-white/90 mb-1">Vídeos</h2>
               <p className="text-[#64748B] text-sm mb-5">Para equipos que publican con regularidad.</p>
               <div className="text-4xl font-bold text-white/90 mb-6">
-                40€<span className="text-base font-normal text-[#64748B]">/mes</span>
+                40€<span className="text-base font-normal text-[#64748B]">/mes + IVA</span>
               </div>
               <ul className="space-y-2 text-[13px] text-[#94A3B8] flex-1 mb-6">
                 <li className="flex items-start gap-3"><Check /><span>8 vídeos al mes</span></li>
@@ -63,7 +63,7 @@ export default function Planes() {
               <h2 className="text-xl font-bold text-white mb-1">Pro</h2>
               <p className="text-[#94A3B8] text-sm mb-5">Vídeo y fotografía en un solo plan.</p>
               <div className="text-4xl font-bold text-white mb-6">
-                100€<span className="text-base font-normal text-[#94A3B8]">/mes</span>
+                100€<span className="text-base font-normal text-[#94A3B8]">/mes + IVA</span>
               </div>
               <ul className="space-y-2 text-[13px] text-[#CBD5E1] flex-1 mb-6">
                 <li className="flex items-start gap-3"><Check /><span>20 vídeos al mes</span></li>
