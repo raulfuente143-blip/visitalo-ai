@@ -7,14 +7,22 @@ import { ConfirmDialog } from "@/components/confirm-dialog";
 export function DeletePropertyButton({ propertyId }: { propertyId: string }) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleConfirm = async () => {
     setBusy(true);
+    setError(null);
     try {
-      await deleteProperty(propertyId);
+      const result = await deleteProperty(propertyId);
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      setOpen(false);
+    } catch {
+      setError("No se ha podido eliminar la propiedad. Inténtalo de nuevo.");
     } finally {
       setBusy(false);
-      setOpen(false);
     }
   };
 
@@ -22,7 +30,10 @@ export function DeletePropertyButton({ propertyId }: { propertyId: string }) {
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          setError(null);
+          setOpen(true);
+        }}
         className="inline-flex items-center justify-center whitespace-nowrap rounded-full border border-red-200 px-4 py-2.5 text-sm font-medium text-red-600 transition-colors duration-200 hover:bg-red-50"
       >
         Eliminar
@@ -30,8 +41,9 @@ export function DeletePropertyButton({ propertyId }: { propertyId: string }) {
       <ConfirmDialog
         open={open}
         busy={busy}
+        error={error}
         title="¿Eliminar esta propiedad?"
-        description="Se eliminarán también su plano, sus habitaciones y sus fotos. Esta acción no se puede deshacer."
+        description="Se borrarán su plano, sus habitaciones, sus fotos y sus videos. Esta acción no se puede deshacer."
         onConfirm={() => {
           void handleConfirm();
         }}

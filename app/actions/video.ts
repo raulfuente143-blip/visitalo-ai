@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createServerComponentClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { parseStorageUrl } from "@/lib/storage-paths";
 
 export type CreateVideoResult =
   | { ok: true; videoId: string }
@@ -166,12 +168,46 @@ export async function createVideo(propertyId: string): Promise<CreateVideoResult
   return { ok: true, videoId: video.id };
 }
 
-export async function deleteVideo(videoId: string) {
+export async function deleteVideo(videoId: string): Promise<{ ok: true } | { ok: false; error: string }> {
   const supabase = await createServerComponentClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
-  await supabase.from("videos").delete().eq("id", videoId);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { ok: false, error: "Tu sesión ha caducado. Vuelve a iniciar sesión." };
+  }
+
+  // Si el usuario puede leerlo, es de su agencia (lo garantizan las reglas de acceso).
+  const { data: video } = await supabase
+    .from("videos")
+    .select("id, output_url")
+    .eq("id", videoId)
+    .maybeSingle();
+
+  if (!video) {
+    return { ok: false, error: "No se ha encontrado el video." };
+  }
+
+  const admin = createAdminClient();
+  await admin.from("video_jobs").delete().eq("video_id", videoId);
+  const { error } = await admin.from("videos").delete().eq("id", videoId);
+
+  if (error) {
+    return { ok: false, error: "No se ha podido eliminar el video. Inténtalo de nuevo." };
+  }
+
+  const file = parseStorageUrl(video.output_url);
+  if (file) {
+    const { error: storageError } = await admin.storage.from(file.bucket).remove([file.path]);
+    if (storageError) {
+      console.error("[deleteVideo] No se pudo borrar el archivo:", storageError.message);
+    }
+  }
+
   revalidatePath("/videos");
+  revalidatePath("/dashboard");
+  return { ok: true };
 }
 
 export async function failVideoAndRefund(

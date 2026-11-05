@@ -42,6 +42,7 @@ export function OnboardingLogoUploader({ initialLogoUrl }: { initialLogoUrl?: st
   const [logoUrl, setLogoUrl] = useState(initialLogoUrl ?? "");
   const [previewUrl, setPreviewUrl] = useState<string | null>(initialLogoUrl ?? null);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const uploadLogoToSupabase = async (file: File) => {
     const supabase = createClient();
@@ -80,10 +81,11 @@ export function OnboardingLogoUploader({ initialLogoUrl }: { initialLogoUrl?: st
     const isAllowed = allowedMimeTypes.has(mimeType as (typeof acceptedTypes)[number]) || ["png", "jpg", "jpeg", "webp"].includes(extension);
 
     if (!isAllowed) {
-      alert("Formato de imagen no soportado. Usa PNG, JPG o WEBP.");
+      setUploadError("Formato no válido. Usa una imagen PNG, JPG o WEBP.");
       return;
     }
 
+    setUploadError(null);
     setSelectedFile(normalizedFile);
     setPreviewUrl(URL.createObjectURL(normalizedFile));
 
@@ -92,7 +94,8 @@ export function OnboardingLogoUploader({ initialLogoUrl }: { initialLogoUrl?: st
       const publicUrl = await uploadLogoToSupabase(normalizedFile);
       setLogoUrl(publicUrl);
     } catch (error) {
-      alert((error as Error).message);
+      console.error("Error subiendo el logo:", error);
+      setUploadError("No se ha podido subir el logo. Inténtalo de nuevo.");
     } finally {
       setIsUploading(false);
     }
@@ -162,6 +165,12 @@ export function OnboardingLogoUploader({ initialLogoUrl }: { initialLogoUrl?: st
         />
         <input type="hidden" name="logoUrl" value={logoUrl} />
       </div>
+
+      {uploadError ? (
+        <p className="mt-3 text-sm text-red-600" role="alert">
+          {uploadError}
+        </p>
+      ) : null}
 
       {selectedFile ? (
         <p className="mt-3 text-xs text-[#6B7280]">

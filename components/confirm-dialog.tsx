@@ -12,6 +12,7 @@ type ConfirmDialogProps = {
   cancelLabel?: string;
   destructive?: boolean;
   busy?: boolean;
+  error?: string | null;
   onConfirm: () => void;
   onCancel: () => void;
 };
@@ -24,6 +25,7 @@ export function ConfirmDialog({
   cancelLabel = "Cancelar",
   destructive = true,
   busy = false,
+  error = null,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
@@ -66,6 +68,11 @@ export function ConfirmDialog({
         {description ? (
           <p id="confirm-dialog-description" className="mt-3 text-sm leading-relaxed text-pretty text-[#6B7280]">
             {description}
+          </p>
+        ) : null}
+        {error ? (
+          <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+            {error}
           </p>
         ) : null}
         <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
