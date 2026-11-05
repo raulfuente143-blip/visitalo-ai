@@ -160,3 +160,29 @@ export async function deleteVideo(videoId: string) {
   await supabase.from("videos").delete().eq("id", videoId);
   revalidatePath("/videos");
 }
+
+export async function failVideoAndRefund(
+  videoId: string,
+  message: string,
+): Promise<{ refunded: boolean }> {
+  const supabase = await createServerComponentClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { refunded: false };
+  }
+
+  await supabase
+    .from("videos")
+    .update({ status: "failed", error_message: message.slice(0, 500) })
+    .eq("id", videoId)
+    .neq("status", "completed");
+
+  const { data, error } = await supabase.rpc("refund_failed_video_credit", { p_video_id: videoId });
+
+  revalidatePath("/dashboard");
+  revalidatePath("/billing");
+  return { refunded: !error && data === true };
+}
