@@ -76,6 +76,11 @@ export async function createCheckoutSession(formData: FormData) {
     line_items: [{ price: price.id, quantity: 1, tax_rates: [vatRateId] }],
     billing_address_collection: "required",
     tax_id_collection: { enabled: true },
+    custom_text: {
+      submit: {
+        message: "Sin permanencia. Puedes cancelar cuando quieras desde tu panel; la suscripción termina al final del mes ya pagado.",
+      },
+    },
     client_reference_id: agencyId,
     metadata: { agency_id: agencyId, plan_code: planCode },
     subscription_data: {

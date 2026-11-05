@@ -31,7 +31,7 @@ export default function Planes() {
               Dos planes. Un mismo estándar.
             </h1>
             <p className="text-[#64748B] mt-4 text-sm md:text-base text-balance">
-              Facturación mensual por oficina. Sin permanencia.{" "}
+              Suscripción mensual por oficina, sin permanencia.{" "}
               <a href="mailto:hola@visitalo.ai" className="text-[#D4AF37] hover:text-[#B8960C] transition-colors">
                 ¿Más de 10 oficinas? Escríbenos.
               </a>

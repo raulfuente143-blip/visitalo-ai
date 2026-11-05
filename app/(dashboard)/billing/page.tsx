@@ -206,7 +206,7 @@ export default async function BillingPage({
       </div>
 
       <p className="mt-6 text-center text-sm text-pretty text-[#6B7280]">
-        Precios sin IVA. Facturación mensual por oficina. Sin permanencia: cancela cuando quieras.
+        Precios sin IVA. Suscripción mensual por oficina, sin permanencia: cancela cuando quieras.
       </p>
     </div>
   );
