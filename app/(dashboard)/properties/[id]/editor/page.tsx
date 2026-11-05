@@ -1,8 +1,8 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
 import { createServerComponentClient } from "@/lib/supabase/server";
 import { PropertyFloorPlanEditor } from "@/components/property-floor-plan-editor";
-import { PropertyZonePhotos } from "@/components/property-zone-photos";
-import { Breadcrumb } from "@/components/breadcrumb";
-import { redirect } from "next/navigation";
+import { PageHeader, buttonStyles } from "@/components/panel-ui";
 
 export default async function PropertyEditorPage({
   params,
@@ -51,27 +51,26 @@ export default async function PropertyEditorPage({
     photos: (zonePhotos ?? []).filter((photo) => photo.zone_id === zone.id),
   }));
 
+  const description = [property.address, property.internal_reference ? `Ref. ${property.internal_reference}` : null]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
-    <div className="mx-auto max-w-7xl text-[#111827]">
-      <Breadcrumb
-        items={[
-          { label: "Propiedades", href: "/properties" },
-          { label: property.name, href: `/properties/${property.id}/editor` },
-          { label: "Editor", href: `/properties/${property.id}/editor` },
-        ]}
+    <div className="mx-auto max-w-7xl">
+      <PageHeader
+        title={property.name || "Propiedad"}
+        description={description}
+        action={
+          <div className="grid grid-cols-2 gap-3 sm:flex">
+            <Link href="/properties" className={buttonStyles.secondary}>
+              Volver
+            </Link>
+            <Link href={`/properties/${property.id}/video`} className={buttonStyles.primary}>
+              Crear video
+            </Link>
+          </div>
+        }
       />
-      <div className="mb-6 flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">{property.name}</h1>
-          <p className="mt-1 text-sm text-[#6B7280]">{property.address}</p>
-        </div>
-        <a
-          href="/properties"
-          className="rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm font-medium text-[#111827] transition hover:bg-[#F9FAFB]"
-        >
-          Volver a propiedades
-        </a>
-      </div>
 
       <PropertyFloorPlanEditor
         propertyId={property.id}

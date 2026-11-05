@@ -102,25 +102,7 @@ export async function createVideo(propertyId: string): Promise<CreateVideoResult
     };
   }
 
-  const { data: consumeData, error: consumeError } = await supabase.rpc("consume_video_credit", {
-    p_agency_id: property.agency_id,
-  });
-  const consume = firstRow<ConsumeRow>(consumeData);
-
-  if (consumeError || !consume) {
-    return { ok: false, error: "No se ha podido comprobar tu consumo. Inténtalo de nuevo." };
-  }
-
-  if (!consume.allowed) {
-    return {
-      ok: false,
-      reason: "limit",
-      error: consume.is_trial
-        ? `Has usado los ${consume.video_limit} videos de la prueba gratuita. Elige un plan para seguir creando videos.`
-        : `Has usado los ${consume.video_limit} videos de tu plan en este periodo. Podrás crear más cuando se renueve, o cambiar a un plan superior.`,
-    };
-  }
-
+  // 1) Primero se crea el video. Si falla, no se ha descontado nada.
   const { data: video, error: videoError } = await supabase
     .from("videos")
     .insert({
@@ -136,6 +118,29 @@ export async function createVideo(propertyId: string): Promise<CreateVideoResult
     return { ok: false, error: "No se ha podido crear el video. Inténtalo de nuevo." };
   }
 
+  // 2) Después se descuenta. Si no hay crédito, se borra el video recién creado.
+  const { data: consumeData, error: consumeError } = await supabase.rpc("consume_video_credit", {
+    p_agency_id: property.agency_id,
+  });
+  const consume = firstRow<ConsumeRow>(consumeData);
+
+  if (consumeError || !consume) {
+    await supabase.from("videos").delete().eq("id", video.id);
+    return { ok: false, error: "No se ha podido comprobar tu consumo. Inténtalo de nuevo." };
+  }
+
+  if (!consume.allowed) {
+    await supabase.from("videos").delete().eq("id", video.id);
+    return {
+      ok: false,
+      reason: "limit",
+      error: consume.is_trial
+        ? `Has usado los ${consume.video_limit} videos de tu prueba gratuita. Elige un plan y sigue creando videos con la identidad de tu agencia.`
+        : `Has usado los ${consume.video_limit} videos de tu plan en este periodo. Podrás crear más cuando se renueve, o pasar a un plan superior.`,
+    };
+  }
+
+  // 3) Si falla la preparación, se marca como fallido y se devuelve el crédito.
   const { error: jobError } = await supabase.from("video_jobs").insert({
     video_id: video.id,
     job_type: "render",
@@ -143,7 +148,15 @@ export async function createVideo(propertyId: string): Promise<CreateVideoResult
   });
 
   if (jobError) {
-    return { ok: false, error: "No se ha podido preparar el video. Inténtalo de nuevo." };
+    await supabase
+      .from("videos")
+      .update({ status: "failed", error_message: "No se ha podido preparar el video." })
+      .eq("id", video.id);
+    await supabase.rpc("refund_failed_video_credit", { p_video_id: video.id });
+    return {
+      ok: false,
+      error: "No se ha podido preparar el video. No se ha descontado de tu plan: inténtalo de nuevo.",
+    };
   }
 
   revalidatePath(`/properties/${propertyId}/video`);
