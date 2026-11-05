@@ -1,3 +1,5 @@
+-- AVISO: este esquema es el inicial y está DESACTUALIZADO.
+-- Los cambios posteriores están en supabase/migrations/ (aplicar en orden de fecha).
 BEGIN;
 
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
