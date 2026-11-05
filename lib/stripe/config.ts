@@ -10,47 +10,48 @@ export const stripe = stripeSecretKey
 
 export function getStripe() {
   if (!stripe) {
-    throw new Error("Missing STRIPE_SECRET_KEY. Add the key to your environment before using Stripe.");
+    throw new Error("Falta STRIPE_SECRET_KEY en las variables de entorno.");
   }
-
   return stripe;
 }
 
-export const plans = {
-  starter: {
-    id: "starter",
-    name: "Starter",
-    amount: 2000,
-    currency: "eur",
-    description: "Plan ideal para empezar con pocos videos y fotos.",
-    limits: {
-      videos: 50,
-      photos: 500,
-      credits: 100,
-    },
-  },
-  pro: {
-    id: "pro",
-    name: "Pro",
-    amount: 4500,
-    currency: "eur",
-    description: "Para agencias que necesitan más volumen y automatización.",
-    limits: {
-      videos: 150,
-      photos: 2000,
-      credits: 250,
-    },
-  },
-  agencia: {
-    id: "agencia",
-    name: "Agencia",
-    amount: 10000,
-    currency: "eur",
-    description: "Para equipos con mucha producción y gestión centralizada.",
-    limits: {
-      videos: 400,
-      photos: 8000,
-      credits: 800,
-    },
-  },
-} as const;
+// Planes de pago. Los precios viven en Stripe y se localizan por lookup_key
+// (los crea scripts/stripe-setup.mjs). Los límites viven en la tabla plans de Supabase.
+export const PAID_PLAN_CODES = ["videos", "pro"] as const;
+export type PaidPlanCode = (typeof PAID_PLAN_CODES)[number];
+
+export function isPaidPlanCode(value: string): value is PaidPlanCode {
+  return (PAID_PLAN_CODES as readonly string[]).includes(value);
+}
+
+export const PLAN_LOOKUP_KEYS: Record<PaidPlanCode, string> = {
+  videos: "visitalo_videos_mensual",
+  pro: "visitalo_pro_mensual",
+};
+
+let cachedVatRateId: string | null = null;
+let cachedPortalConfigurationId: string | null = null;
+
+export async function getVatRateId(): Promise<string> {
+  if (cachedVatRateId) return cachedVatRateId;
+  const client = getStripe();
+  for await (const rate of client.taxRates.list({ active: true, limit: 100 })) {
+    if (rate.metadata?.visitalo === "iva_es_21" && rate.percentage === 21 && !rate.inclusive) {
+      cachedVatRateId = rate.id;
+      return rate.id;
+    }
+  }
+  throw new Error("No se encuentra el IVA del 21 % en Stripe. Ejecuta scripts/stripe-setup.mjs.");
+}
+
+export async function getPortalConfigurationId(): Promise<string> {
+  if (cachedPortalConfigurationId) return cachedPortalConfigurationId;
+  const client = getStripe();
+  for await (const config of client.billingPortal.configurations.list({ limit: 100 })) {
+    if (config.metadata?.visitalo === "portal" && config.active) {
+      cachedPortalConfigurationId = config.id;
+      return config.id;
+    }
+  }
+  throw new Error("No se encuentra la configuración del portal de Stripe. Ejecuta scripts/stripe-setup.mjs.");
+}
