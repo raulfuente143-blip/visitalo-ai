@@ -89,6 +89,25 @@ export function PropertyFloorPlanEditor({
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
+  const editingZoneIdRef = useRef<string | null>(null);
+  const savedWhileEditingRef = useRef(false);
+
+  // Mientras se ajustan esquinas se guarda en silencio; el aviso sale al salir del modo edición.
+  useEffect(() => {
+    const wasEditing = editingZoneIdRef.current;
+    editingZoneIdRef.current = editingZoneId;
+    if (wasEditing && !editingZoneId && savedWhileEditingRef.current) {
+      savedWhileEditingRef.current = false;
+      setMessage("Cambios guardados.");
+    }
+  }, [editingZoneId]);
+
+  useEffect(() => {
+    if (!error) return;
+    const timer = setTimeout(() => setError(""), 5000);
+    return () => clearTimeout(timer);
+  }, [error]);
+
   useEffect(() => {
     if (!message) return;
     const timer = setTimeout(() => setMessage(""), 2500);
@@ -142,7 +161,11 @@ export function PropertyFloorPlanEditor({
           zone.id === zoneId ? { ...zone, ...updatedZone, photos: zone.photos } : zone,
         ),
       );
-      setMessage("Cambios guardados.");
+      if (editingZoneIdRef.current) {
+        savedWhileEditingRef.current = true;
+      } else {
+        setMessage("Cambios guardados.");
+      }
     } catch (zoneError) {
       setError(zoneError instanceof Error ? zoneError.message : "No se pudo guardar la habitación.");
     }
@@ -290,14 +313,17 @@ export function PropertyFloorPlanEditor({
 
   return (
     <div className="space-y-4">
-      {error ? (
-        <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
-          {error}
-        </p>
-      ) : message ? (
-        <p className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700" role="status">
-          {message}
-        </p>
+      {error || message ? (
+        <div className="pointer-events-none fixed inset-x-0 bottom-28 z-[65] flex justify-center px-4 md:bottom-8">
+          <p
+            role={error ? "alert" : "status"}
+            className={`page-enter pointer-events-auto max-w-md rounded-full px-5 py-2.5 text-center text-sm font-medium text-white shadow-lg ${
+              error ? "bg-red-600" : "bg-[#0F172A]"
+            }`}
+          >
+            {error || message}
+          </p>
+        </div>
       ) : null}
 
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">

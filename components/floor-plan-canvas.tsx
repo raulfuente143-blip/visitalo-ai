@@ -102,6 +102,22 @@ export default function FloorPlanCanvas({
   // Tamaño visual constante aunque el plano se vea pequeño (móvil)
   const handleScale = scaleX > 0 ? 1 / Math.max(scaleX, 0.35) : 1;
 
+  const stageRef = useRef<any>(null);
+  const lockTouchRef = useRef(false);
+  lockTouchRef.current = Boolean(selectedZoneId || editingZoneId);
+
+  // Safari en iPhone a veces ignora touch-action: con una habitación seleccionada
+  // se bloquea el scroll de la página para que el dedo mueva la habitación en cualquier dirección.
+  useEffect(() => {
+    const container: HTMLElement | undefined = stageRef.current?.container();
+    if (!container) return;
+    const handleTouchMove = (event: TouchEvent) => {
+      if (lockTouchRef.current) event.preventDefault();
+    };
+    container.addEventListener("touchmove", handleTouchMove, { passive: false });
+    return () => container.removeEventListener("touchmove", handleTouchMove);
+  }, []);
+
   useEffect(() => {
     if (zones.length > previousZoneCount.current) {
       setPendingZone(null);
@@ -136,6 +152,7 @@ export default function FloorPlanCanvas({
 
   return (
     <Stage
+      ref={stageRef}
       width={size.width}
       height={size.height}
       onClick={handleStageTap}
