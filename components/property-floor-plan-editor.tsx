@@ -307,7 +307,7 @@ export function PropertyFloorPlanEditor({
               <h2 className="text-lg font-semibold text-[#0F172A]">Plano</h2>
               <p className="mt-1 text-sm text-pretty text-[#6B7280]">
                 {floorPlanUrl
-                  ? "Haz clic en una zona vacía del plano para marcar una habitación. Arrástrala para moverla y haz doble clic para ajustar sus esquinas."
+                  ? "Toca o haz clic en una zona vacía del plano para marcar una habitación. Selecciónala y arrástrala para moverla; con doble toque o doble clic ajustas sus esquinas."
                   : "Sube el plano de la vivienda para empezar a marcar las habitaciones."}
               </p>
             </div>
@@ -352,6 +352,10 @@ export function PropertyFloorPlanEditor({
                     onEditZone={handleZoneEdit}
                     onZonePointsChange={updateZonePointsLocally}
                     onUpdateZonePoints={persistZonePoints}
+                    onDeselect={() => {
+                      setSelectedZoneId(null);
+                      setEditingZoneId(null);
+                    }}
                   />
                 ) : null}
               </div>

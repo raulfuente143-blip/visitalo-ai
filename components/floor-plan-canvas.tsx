@@ -28,10 +28,19 @@ export type FloorPlanCanvasProps = {
   onEditZone: (zoneId: string) => void;
   onZonePointsChange: (zoneId: string, points: number[]) => void;
   onUpdateZonePoints: (zoneId: string, points: number[]) => void;
+  onDeselect?: () => void;
 };
 
 const STAGE_WIDTH = 1000;
 const STAGE_HEIGHT = 700;
+
+// Colores de la marca
+const GOLD = "#D4AF37";
+const GOLD_DARK = "#B8960C";
+const FILL = "rgba(212, 175, 55, 0.16)";
+const FILL_SELECTED = "rgba(212, 175, 55, 0.30)";
+const LABEL_WIDTH = 220;
+
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
 const normalizePoints = (points?: number[]) => {
@@ -77,10 +86,10 @@ export default function FloorPlanCanvas({
   onEditZone,
   onZonePointsChange,
   onUpdateZonePoints,
+  onDeselect,
 }: FloorPlanCanvasProps) {
   const [pendingZone, setPendingZone] = useState<{ points: number[]; name: string } | null>(null);
   const previousZoneCount = useRef(zones.length);
-  const lastClickTime = useRef<Record<string, number>>({});
   const activeSutureInsertIndex = useRef<number | null>(null);
   const activeSuturePoints = useRef<number[] | null>(null);
   const [hoveredSutureId, setHoveredSutureId] = useState<string | null>(null);
@@ -90,6 +99,8 @@ export default function FloorPlanCanvas({
   const dragOffsetsRef = useRef<Record<string, { x: number; y: number }>>({});
   const scaleX = size.width / STAGE_WIDTH;
   const scaleY = size.height / STAGE_HEIGHT;
+  // Tamaño visual constante aunque el plano se vea pequeño (móvil)
+  const handleScale = scaleX > 0 ? 1 / Math.max(scaleX, 0.35) : 1;
 
   useEffect(() => {
     if (zones.length > previousZoneCount.current) {
@@ -98,9 +109,16 @@ export default function FloorPlanCanvas({
     previousZoneCount.current = zones.length;
   }, [zones.length]);
 
-  const handleStageMouseDown = (event: any) => {
+  // Se usa onClick/onTap: solo se dispara con un toque limpio, no al deslizar el dedo para hacer scroll.
+  const handleStageTap = (event: any) => {
     const stage = event.target.getStage();
     if (event.target !== stage || scaleX <= 0 || scaleY <= 0) return;
+
+    // Si hay una habitación seleccionada, el primer toque fuera solo la deselecciona.
+    if ((selectedZoneId || editingZoneId) && onDeselect) {
+      onDeselect();
+      return;
+    }
 
     const pointer = stage.getPointerPosition();
     if (!pointer) return;
@@ -120,9 +138,14 @@ export default function FloorPlanCanvas({
     <Stage
       width={size.width}
       height={size.height}
-      onMouseDown={handleStageMouseDown}
-      onTouchStart={handleStageMouseDown}
-      style={{ position: "absolute", inset: 0 }}
+      onClick={handleStageTap}
+      onTap={handleStageTap}
+      style={{
+        position: "absolute",
+        inset: 0,
+        // Con una habitación seleccionada, el dedo mueve la habitación; si no, permite hacer scroll.
+        touchAction: selectedZoneId || editingZoneId ? "none" : "pan-y",
+      }}
     >
       <Layer scaleX={scaleX} scaleY={scaleY}>
         {planImage ? (
@@ -141,9 +164,9 @@ export default function FloorPlanCanvas({
             points={pendingZone.points}
             closed={true}
             perfectDrawEnabled={false}
-            fill="rgba(14, 165, 233, 0.12)"
-            stroke="#0284c7"
-            strokeWidth={2}
+            fill={FILL}
+            stroke={GOLD}
+            strokeWidth={2 * handleScale}
             opacity={0.55}
             listening={false}
           />
@@ -172,23 +195,25 @@ export default function FloorPlanCanvas({
                 perfectDrawEnabled={false}
                 draggable={isSelected && !isEditing}
                 listening={!isEditing}
-                fill={isSelected ? "rgba(14, 165, 233, 0.28)" : "rgba(14, 165, 233, 0.16)"}
-                stroke="#0284c7"
-                strokeWidth={isEditing ? 4 : isSelected ? 3 : 2}
+                fill={isSelected ? FILL_SELECTED : FILL}
+                stroke={isSelected || isEditing ? GOLD_DARK : GOLD}
+                strokeWidth={(isEditing ? 4 : isSelected ? 3 : 2) * handleScale}
+                hitStrokeWidth={16 * handleScale}
                 onClick={(event: any) => {
                   event.cancelBubble = true;
-                  const now = Date.now();
-                  const last = lastClickTime.current[zone.id] ?? 0;
-                  if (now - last < 300) {
-                    onEditZone(zone.id);
-                  } else {
-                    onSelectZone(zone.id);
-                  }
-                  lastClickTime.current[zone.id] = now;
+                  onSelectZone(zone.id);
                 }}
-                onTouchStart={(event: any) => {
+                onTap={(event: any) => {
                   event.cancelBubble = true;
                   onSelectZone(zone.id);
+                }}
+                onDblClick={(event: any) => {
+                  event.cancelBubble = true;
+                  onEditZone(zone.id);
+                }}
+                onDblTap={(event: any) => {
+                  event.cancelBubble = true;
+                  onEditZone(zone.id);
                 }}
                 onDragMove={(event: any) => {
                   const offset = { x: event.target.x(), y: event.target.y() };
@@ -224,11 +249,11 @@ export default function FloorPlanCanvas({
                     key={`${zone.id}-vertex-${index}`}
                     x={point}
                     y={points[index + 1]}
-                    radius={7}
-                    fill="#1d4ed8"
-                    opacity={1}
+                    radius={8 * handleScale}
+                    hitStrokeWidth={22 * handleScale}
+                    fill={GOLD}
                     stroke="white"
-                    strokeWidth={2}
+                    strokeWidth={2 * handleScale}
                     listening={true}
                     draggable={true}
                     onDragStart={(event: any) => {
@@ -246,16 +271,21 @@ export default function FloorPlanCanvas({
                 const midX = (point + points[nextIndex]) / 2;
                 const midY = (points[index + 1] + points[(index + 3) % points.length]) / 2;
                 const sutureId = `${zone.id}-suture-${index}`;
-                if (draggingSutureId === sutureId) return null;
+                const isDraggingThis = draggingSutureId === sutureId;
+                // Otro punto intermedio en arrastre: se ocultan los demás para no confundir.
+                if (draggingSutureId && !isDraggingThis) return null;
 
                 return (
                   <Circle
                     key={sutureId}
                     x={midX}
                     y={midY}
-                    radius={4}
-                    fill="#60a5fa"
-                    opacity={hoveredSutureId === sutureId ? 0.9 : 0.6}
+                    radius={6 * handleScale}
+                    hitStrokeWidth={20 * handleScale}
+                    fill="white"
+                    stroke={GOLD_DARK}
+                    strokeWidth={2 * handleScale}
+                    opacity={isDraggingThis ? 1 : hoveredSutureId === sutureId ? 0.95 : 0.75}
                     listening={true}
                     draggable={true}
                     onMouseEnter={() => setHoveredSutureId(sutureId)}
@@ -309,12 +339,17 @@ export default function FloorPlanCanvas({
               <Text
                 x={centerX + dragOffset.x}
                 y={centerY + dragOffset.y}
+                width={LABEL_WIDTH}
+                offsetX={LABEL_WIDTH / 2}
+                offsetY={10 * handleScale}
+                align="center"
                 text={zone.name}
-                fontSize={18}
+                fontSize={18 * handleScale}
                 fontStyle="600"
-                fill="#0f172a"
-                offsetX={50}
-                offsetY={10}
+                fill="#0F172A"
+                stroke="rgba(255, 255, 255, 0.85)"
+                strokeWidth={3 * handleScale}
+                fillAfterStrokeEnabled={true}
                 listening={false}
                 draggable={false}
               />
