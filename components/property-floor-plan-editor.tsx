@@ -333,7 +333,7 @@ export function PropertyFloorPlanEditor({
               <h2 className="text-lg font-semibold text-[#0F172A]">Plano</h2>
               <p className="mt-1 text-sm text-pretty text-[#6B7280]">
                 {floorPlanUrl
-                  ? "Toca o haz clic en una zona vacía del plano para marcar una habitación. Selecciónala y arrástrala para moverla; con doble toque o doble clic ajustas sus esquinas."
+                  ? "Toca o haz clic en una zona vacía del plano para marcar una habitación. Selecciónala y arrástrala para moverla. Con doble toque o doble clic cambias su tamaño desde las esquinas doradas; los puntos blancos añaden una esquina nueva para habitaciones en forma de L."
                   : "Sube el plano de la vivienda para empezar a marcar las habitaciones."}
               </p>
             </div>

@@ -64,6 +64,19 @@ function isPointInPolygon(px: number, py: number, points: number[]): boolean {
   return inside;
 }
 
+// Rectángulo en el orden en que se crean las habitaciones:
+// arriba-izquierda, arriba-derecha, abajo-derecha, abajo-izquierda.
+function isRectangle(points: number[]): boolean {
+  if (points.length !== 8) return false;
+  const near = (a: number, b: number) => Math.abs(a - b) < 0.5;
+  return (
+    near(points[0], points[6]) &&
+    near(points[2], points[4]) &&
+    near(points[1], points[3]) &&
+    near(points[5], points[7])
+  );
+}
+
 const createDefaultPolygonPoints = (pointerX: number, pointerY: number) => {
   const halfWidth = 80;
   const halfHeight = 55;
@@ -254,9 +267,20 @@ export default function FloorPlanCanvas({
               {isEditing && points.map((point, index) => {
                 if (index % 2 !== 0) return null;
                 const handleVertexChange = (event: any, shouldSave: boolean) => {
+                  const nextX = clamp(event.target.x(), 0, STAGE_WIDTH);
+                  const nextY = clamp(event.target.y(), 0, STAGE_HEIGHT);
                   const nextPoints = [...points];
-                  nextPoints[index] = clamp(event.target.x(), 0, STAGE_WIDTH);
-                  nextPoints[index + 1] = clamp(event.target.y(), 0, STAGE_HEIGHT);
+                  const vertex = index / 2;
+                  nextPoints[index] = nextX;
+                  nextPoints[index + 1] = nextY;
+                  // Habitación rectangular: al mover una esquina se mueven también las dos contiguas,
+                  // para que siga siendo un rectángulo (como al redimensionar en un programa de diseño).
+                  if (isRectangle(points)) {
+                    const sameX = [3, 2, 1, 0][vertex];
+                    const sameY = [1, 0, 3, 2][vertex];
+                    nextPoints[sameX * 2] = nextX;
+                    nextPoints[sameY * 2 + 1] = nextY;
+                  }
                   onZonePointsChange(zone.id, nextPoints);
                   if (shouldSave) onUpdateZonePoints(zone.id, nextPoints);
                 };
