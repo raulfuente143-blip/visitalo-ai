@@ -6,6 +6,26 @@ import { createServerComponentClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { addStoragePath, groupStoragePaths } from "@/lib/storage-paths";
 
+// Lista todos los archivos de una carpeta de Storage, entrando en subcarpetas (hasta 2 niveles).
+async function listFiles(
+  admin: ReturnType<typeof createAdminClient>,
+  bucket: string,
+  prefix: string,
+  depth = 2,
+): Promise<string[]> {
+  const { data } = await admin.storage.from(bucket).list(prefix, { limit: 1000 });
+  const files: string[] = [];
+  for (const entry of data ?? []) {
+    const fullPath = `${prefix}/${entry.name}`;
+    if (!entry.id) {
+      if (depth > 0) files.push(...(await listFiles(admin, bucket, fullPath, depth - 1)));
+    } else {
+      files.push(fullPath);
+    }
+  }
+  return files;
+}
+
 export async function createProperty(formData: FormData) {
   const supabase = await createServerComponentClient();
 
@@ -129,14 +149,15 @@ export async function deleteProperty(propertyId: string): Promise<DeleteResult> 
   // 2) Archivos. Si alguno falla, se registra pero la propiedad ya está borrada.
   const byBucket = groupStoragePaths(urls);
 
-  const { data: leftoverVideos } = await admin.storage.from("property-videos").list(propertyId, { limit: 1000 });
-  for (const file of leftoverVideos ?? []) {
-    addStoragePath(byBucket, "property-videos", `${propertyId}/${file.name}`);
-  }
-
-  const { data: leftoverPlans } = await admin.storage.from("floor-plans").list(`properties/${propertyId}`, { limit: 1000 });
-  for (const file of leftoverPlans ?? []) {
-    addStoragePath(byBucket, "floor-plans", `properties/${propertyId}/${file.name}`);
+  const leftoverFolders: [string, string][] = [
+    ["property-videos", propertyId],
+    ["floor-plans", `properties/${propertyId}`],
+    ["property-photos", `properties/${propertyId}`],
+  ];
+  for (const [bucket, prefix] of leftoverFolders) {
+    for (const path of await listFiles(admin, bucket, prefix)) {
+      addStoragePath(byBucket, bucket, path);
+    }
   }
 
   for (const [bucket, paths] of Array.from(byBucket.entries())) {

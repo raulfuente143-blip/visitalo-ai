@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createServerComponentClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { groupStoragePaths } from "@/lib/storage-paths";
 
 async function getAuthenticatedProperty(propertyId: string) {
   const supabase = await createServerComponentClient();
@@ -46,12 +48,34 @@ async function getAuthenticatedProperty(propertyId: string) {
   return { supabase, user, property };
 }
 
+// Borra de Storage los archivos que ya no usa nadie. Si falla, solo se registra:
+// el cambio que ha pedido el usuario ya está guardado.
+async function removeStorageFiles(urls: (string | null | undefined)[]) {
+  const byBucket = groupStoragePaths(urls);
+  if (byBucket.size === 0) return;
+
+  const admin = createAdminClient();
+  for (const [bucket, paths] of Array.from(byBucket.entries())) {
+    const { error } = await admin.storage.from(bucket).remove(Array.from(paths));
+    if (error) {
+      console.error(`[property-editor] No se pudieron borrar archivos de ${bucket}:`, error.message);
+    }
+  }
+}
+
 export async function saveFloorPlan(propertyId: string, floorPlanUrl: string) {
   if (!floorPlanUrl) {
     throw new Error("La URL del plano es obligatoria");
   }
 
   const { supabase } = await getAuthenticatedProperty(propertyId);
+
+  const { data: current } = await supabase
+    .from("properties")
+    .select("floor_plan_url")
+    .eq("id", propertyId)
+    .maybeSingle();
+
   const { error } = await supabase
     .from("properties")
     .update({ floor_plan_url: floorPlanUrl })
@@ -59,6 +83,10 @@ export async function saveFloorPlan(propertyId: string, floorPlanUrl: string) {
 
   if (error) {
     throw new Error(error.message);
+  }
+
+  if (current?.floor_plan_url && current.floor_plan_url !== floorPlanUrl) {
+    await removeStorageFiles([current.floor_plan_url]);
   }
 
   revalidatePath(`/properties/${propertyId}/editor`);
@@ -139,6 +167,20 @@ export async function deletePropertyZone(propertyId: string, zoneId: string) {
     throw new Error("La habitación no pertenece a esta propiedad");
   }
 
+  const { data: zonePhotos } = await supabase
+    .from("property_zone_photos")
+    .select("url")
+    .eq("zone_id", zoneId);
+
+  const { error: photosDeleteError } = await supabase
+    .from("property_zone_photos")
+    .delete()
+    .eq("zone_id", zoneId);
+
+  if (photosDeleteError) {
+    throw new Error(photosDeleteError.message);
+  }
+
   const { error: deleteError } = await supabase
     .from("property_zones")
     .delete()
@@ -171,6 +213,8 @@ export async function deletePropertyZone(propertyId: string, zoneId: string) {
     }
   }
 
+  await removeStorageFiles((zonePhotos ?? []).map((photo: { url: string | null }) => photo.url));
+
   revalidatePath(`/properties/${propertyId}/editor`);
 }
 
@@ -200,6 +244,13 @@ export async function savePropertyZonePhoto(
     throw new Error("La habitación no pertenece a esta propiedad");
   }
 
+  const { data: previous } = await supabase
+    .from("property_zone_photos")
+    .select("url")
+    .eq("zone_id", zoneId)
+    .eq("photo_slot", photoSlot)
+    .maybeSingle();
+
   const photoPayload = {
     zone_id: zoneId,
     photo_slot: photoSlot,
@@ -216,6 +267,10 @@ export async function savePropertyZonePhoto(
     throw new Error(error.message);
   }
 
+  if (previous?.url && previous.url !== url) {
+    await removeStorageFiles([previous.url]);
+  }
+
   revalidatePath(`/properties/${propertyId}/editor`);
   return data;
 }
@@ -226,6 +281,14 @@ export async function deletePropertyZonePhoto(
   photoId: string,
 ) {
   const { supabase } = await getAuthenticatedProperty(propertyId);
+
+  const { data: photo } = await supabase
+    .from("property_zone_photos")
+    .select("url")
+    .eq("id", photoId)
+    .eq("zone_id", zoneId)
+    .maybeSingle();
+
   const { error } = await supabase
     .from("property_zone_photos")
     .delete()
@@ -235,6 +298,8 @@ export async function deletePropertyZonePhoto(
   if (error) {
     throw new Error(error.message);
   }
+
+  await removeStorageFiles([photo?.url]);
 
   revalidatePath(`/properties/${propertyId}/editor`);
 }
