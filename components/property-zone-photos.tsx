@@ -6,6 +6,7 @@ import {
   savePropertyZonePhoto,
 } from "@/app/actions/property-editor";
 import { createClient } from "@/lib/supabase/client";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 type ZonePhoto = {
   id: string;
@@ -13,6 +14,25 @@ type ZonePhoto = {
   photo_slot: 1 | 2;
   url: string;
 };
+
+function TrashIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M3 6h18" />
+      <path d="M8 6V4h8v2" />
+      <path d="m6 6 1 14h10l1-14" />
+    </svg>
+  );
+}
 
 export function PropertyZonePhotos({
   propertyId,
@@ -27,6 +47,8 @@ export function PropertyZonePhotos({
   const [currentPhotos, setCurrentPhotos] = useState(photos);
   const [uploadingSlot, setUploadingSlot] = useState<number | null>(null);
   const [error, setError] = useState("");
+  const [photoToRemove, setPhotoToRemove] = useState<ZonePhoto | null>(null);
+  const [removing, setRemoving] = useState(false);
 
   const uploadPhoto = async (file: File, slot: 1 | 2) => {
     const extension = (file.name.split(".").pop() ?? "jpg").toLowerCase();
@@ -74,61 +96,65 @@ export function PropertyZonePhotos({
     }
   };
 
-  const removePhoto = async (photo: ZonePhoto) => {
+  const confirmRemove = async () => {
+    if (!photoToRemove) return;
     setError("");
+    setRemoving(true);
     try {
-      await deletePropertyZonePhoto(propertyId, zoneId, photo.id);
-      setCurrentPhotos((existingPhotos) => existingPhotos.filter((item) => item.id !== photo.id));
+      await deletePropertyZonePhoto(propertyId, zoneId, photoToRemove.id);
+      setCurrentPhotos((existingPhotos) => existingPhotos.filter((item) => item.id !== photoToRemove.id));
+      setPhotoToRemove(null);
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : "No se pudo eliminar la foto.");
+      setError(deleteError instanceof Error ? deleteError.message : "No se pudo quitar la foto.");
+      setPhotoToRemove(null);
+    } finally {
+      setRemoving(false);
     }
   };
 
   return (
-    <div className="mt-4 rounded-xl bg-slate-50 p-4">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <div>
-          <p className="text-sm font-semibold text-slate-800">Fotos de la habitación</p>
-          <p className="mt-1 text-xs text-slate-500">Sube exactamente 2 fotos para esta zona.</p>
-        </div>
-        <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-600">
-          {currentPhotos.length}/2
-        </span>
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        {[1, 2].map((slot) => {
+    <div>
+      <div className="grid grid-cols-2 gap-3">
+        {([1, 2] as const).map((slot) => {
           const photo = currentPhotos.find((item) => item.photo_slot === slot);
           const isUploading = uploadingSlot === slot;
 
           return (
-            <div key={slot} className="rounded-lg border border-slate-200 bg-white p-3">
+            <div key={slot} className="relative aspect-[4/3] overflow-hidden rounded-xl bg-[#FAFAFA]">
               {photo ? (
-                <img src={photo.url} alt={`Foto ${slot} de la habitación`} className="h-32 w-full rounded-md object-cover" />
+                <>
+                  <img src={photo.url} alt={`Foto ${slot} de la habitación`} className="h-full w-full object-cover" />
+                  <div className="absolute inset-x-0 bottom-0 flex gap-2 bg-gradient-to-t from-black/60 to-transparent p-2 pt-8">
+                    <button
+                      type="button"
+                      onClick={() => inputRefs.current[slot]?.click()}
+                      disabled={isUploading}
+                      className="flex-1 rounded-full bg-white/90 px-3 py-1.5 text-xs font-medium text-[#0F172A] backdrop-blur transition-colors hover:bg-white disabled:opacity-60"
+                    >
+                      {isUploading ? "Subiendo…" : "Cambiar"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPhotoToRemove(photo)}
+                      disabled={isUploading}
+                      aria-label={`Quitar foto ${slot}`}
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/90 text-red-600 backdrop-blur transition-colors hover:bg-white disabled:opacity-60"
+                    >
+                      <TrashIcon />
+                    </button>
+                  </div>
+                </>
               ) : (
-                <div className="flex h-32 items-center justify-center rounded-md border border-dashed border-slate-300 text-xs text-slate-500">
-                  Slot {slot} vacío
-                </div>
-              )}
-              <div className="mt-3 flex gap-2">
                 <button
                   type="button"
                   onClick={() => inputRefs.current[slot]?.click()}
                   disabled={isUploading}
-                  className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
+                  className="flex h-full w-full flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-[#E5E7EB] text-[#6B7280] transition-colors hover:border-[#D4AF37] hover:text-[#0F172A] disabled:opacity-60"
                 >
-                  {isUploading ? "Subiendo..." : photo ? "Cambiar" : `Subir foto ${slot}`}
+                  <span className="text-2xl leading-none">{isUploading ? "…" : "+"}</span>
+                  <span className="text-xs font-medium">{isUploading ? "Subiendo…" : `Foto ${slot}`}</span>
                 </button>
-                {photo ? (
-                  <button
-                    type="button"
-                    onClick={() => removePhoto(photo)}
-                    className="rounded-lg border border-red-200 px-3 py-2 text-xs font-medium text-red-700 transition hover:bg-red-50"
-                  >
-                    Eliminar
-                  </button>
-                ) : null}
-              </div>
+              )}
               <input
                 ref={(element) => {
                   inputRefs.current[slot] = element;
@@ -136,14 +162,34 @@ export function PropertyZonePhotos({
                 type="file"
                 accept="image/png,image/jpeg,image/webp"
                 className="hidden"
-                onChange={(event) => handleSelected(event.target.files?.[0], slot as 1 | 2)}
+                onChange={(event) => {
+                  void handleSelected(event.target.files?.[0], slot);
+                  event.target.value = "";
+                }}
               />
             </div>
           );
         })}
       </div>
 
-      {error ? <p className="mt-3 text-xs text-red-700">{error}</p> : null}
+      <p className="mt-2 text-xs text-[#9CA3AF]">Hasta 2 fotos. Con una ya aparece en el video.</p>
+      {error ? (
+        <p className="mt-2 text-xs text-red-600" role="alert">
+          {error}
+        </p>
+      ) : null}
+
+      <ConfirmDialog
+        open={Boolean(photoToRemove)}
+        busy={removing}
+        title="¿Quitar esta foto?"
+        description="Se borrará la foto de esta habitación. Podrás subir otra cuando quieras."
+        confirmLabel="Quitar"
+        onConfirm={() => {
+          void confirmRemove();
+        }}
+        onCancel={() => setPhotoToRemove(null)}
+      />
     </div>
   );
 }

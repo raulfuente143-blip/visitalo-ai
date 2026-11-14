@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import {
   createPropertyZone,
   deletePropertyZone,
@@ -10,6 +11,8 @@ import {
 } from "@/app/actions/property-editor";
 import { createClient } from "@/lib/supabase/client";
 import { PropertyZonePhotos } from "@/components/property-zone-photos";
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { buttonStyles } from "@/components/panel-ui";
 import type { FloorPlanZone } from "@/components/floor-plan-canvas";
 
 const FloorPlanCanvas = dynamic(() => import("@/components/floor-plan-canvas"), { ssr: false });
@@ -25,6 +28,9 @@ type PropertyFloorPlanEditorProps = {
 const STAGE_WIDTH = 1000;
 const STAGE_HEIGHT = 700;
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+
+const cardClass =
+  "min-w-0 rounded-2xl border border-black/[0.06] bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.04)] sm:p-6";
 
 const normalizePoints = (points?: number[]) => {
   if (!points || points.length < 6 || points.length % 2 !== 0) {
@@ -45,6 +51,25 @@ const createDefaultPolygonPoints = (pointerX: number, pointerY: number) => {
   ];
 };
 
+function TrashIcon({ className = "h-5 w-5" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M3 6h18" />
+      <path d="M8 6V4h8v2" />
+      <path d="m6 6 1 14h10l1-14" />
+    </svg>
+  );
+}
+
 export function PropertyFloorPlanEditor({
   propertyId,
   initialFloorPlanUrl,
@@ -63,6 +88,12 @@ export function PropertyFloorPlanEditor({
   const [isUploading, setIsUploading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!message) return;
+    const timer = setTimeout(() => setMessage(""), 2500);
+    return () => clearTimeout(timer);
+  }, [message]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -111,9 +142,9 @@ export function PropertyFloorPlanEditor({
           zone.id === zoneId ? { ...zone, ...updatedZone, photos: zone.photos } : zone,
         ),
       );
-      setMessage("Zona guardada.");
+      setMessage("Cambios guardados.");
     } catch (zoneError) {
-      setError(zoneError instanceof Error ? zoneError.message : "No se pudo guardar la zona.");
+      setError(zoneError instanceof Error ? zoneError.message : "No se pudo guardar la habitación.");
     }
   };
 
@@ -157,7 +188,7 @@ export function PropertyFloorPlanEditor({
       const publicUrl = await uploadFloorPlan(file);
       await saveFloorPlan(propertyId, publicUrl);
       setFloorPlanUrl(publicUrl);
-      setMessage("Plano guardado correctamente.");
+      setMessage("Plano guardado.");
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : "No se pudo subir el plano.");
     } finally {
@@ -194,13 +225,13 @@ export function PropertyFloorPlanEditor({
         roomOrder,
         points: newPoints,
       });
-      setZones((prev) => prev.map((zone) => zone.id === tempId ? { ...created, points: newPoints, photos: [] } : zone));
-      setSelectedZoneId((currentId) => currentId === tempId ? created.id : currentId);
-      setMessage("Nueva zona creada.");
+      setZones((prev) => prev.map((zone) => (zone.id === tempId ? { ...created, points: newPoints, photos: [] } : zone)));
+      setSelectedZoneId((currentId) => (currentId === tempId ? created.id : currentId));
+      setMessage("Habitación añadida.");
     } catch (zoneError) {
       setZones((prev) => prev.filter((zone) => zone.id !== tempId));
-      setSelectedZoneId((currentId) => currentId === tempId ? null : currentId);
-      setError(zoneError instanceof Error ? zoneError.message : "No se pudo crear la zona.");
+      setSelectedZoneId((currentId) => (currentId === tempId ? null : currentId));
+      setError(zoneError instanceof Error ? zoneError.message : "No se pudo crear la habitación.");
     }
   };
 
@@ -222,9 +253,9 @@ export function PropertyFloorPlanEditor({
             : currentZone,
         ),
       );
-      setMessage("Zona actualizada.");
+      setMessage("Nombre guardado.");
     } catch (zoneError) {
-      setError(zoneError instanceof Error ? zoneError.message : "No se pudo actualizar la zona.");
+      setError(zoneError instanceof Error ? zoneError.message : "No se pudo guardar el nombre.");
     }
   };
 
@@ -239,9 +270,9 @@ export function PropertyFloorPlanEditor({
       );
       setSelectedZoneId((currentId) => (currentId === zoneId ? null : currentId));
       setEditingZoneId((currentId) => (currentId === zoneId ? null : currentId));
-      setMessage("Zona eliminada. El orden se recalcula automáticamente.");
+      setMessage("Habitación eliminada.");
     } catch (zoneError) {
-      setError(zoneError instanceof Error ? zoneError.message : "No se pudo eliminar la zona.");
+      setError(zoneError instanceof Error ? zoneError.message : "No se pudo eliminar la habitación.");
     }
   };
 
@@ -255,96 +286,125 @@ export function PropertyFloorPlanEditor({
     setEditingZoneId(zoneId);
   };
 
+  const sortedZones = [...zones].sort((first, second) => first.room_order - second.room_order);
+
   return (
-    <div className="grid items-start gap-6 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-      <section className="min-w-0 rounded-xl bg-white p-6 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-bold text-slate-900">Plano de la propiedad</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              Sube el plano y haz clic en un punto para crear una zona. Selecciónala para moverla o haz doble clic para editar sus vértices.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => imageInputRef.current?.click()}
-            disabled={isUploading}
-            className="rounded-lg border border-[#E5E7EB] px-4 py-2.5 text-sm font-medium text-[#111827] transition hover:bg-[#F9FAFB] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isUploading ? "Subiendo..." : floorPlanUrl ? "Cambiar plano" : "Subir plano"}
-          </button>
-          <input
-            ref={imageInputRef}
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-            className="hidden"
-            onChange={(event) => handlePlanSelected(event.target.files?.[0])}
-          />
-        </div>
-
-        {floorPlanUrl ? (
-          <div className="mt-6 overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
-            <div
-              ref={containerRef}
-              className="relative w-full"
-              style={{ aspectRatio: `${STAGE_WIDTH} / ${STAGE_HEIGHT}` }}
-            >
-              {size.width > 0 && size.height > 0 ? (
-                <FloorPlanCanvas
-                  size={size}
-                  planImage={planImage}
-                  zones={zones}
-                  selectedZoneId={selectedZoneId}
-                  editingZoneId={editingZoneId}
-                  onStageClick={handleCanvasStageClick}
-                  onSelectZone={handleZoneSelect}
-                  onEditZone={handleZoneEdit}
-                  onZonePointsChange={updateZonePointsLocally}
-                  onUpdateZonePoints={persistZonePoints}
-                />
-              ) : null}
-            </div>
-          </div>
-        ) : (
-          <div className="mt-6 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 p-12 text-center">
-            <p className="font-medium text-slate-700">Aún no hay un plano subido</p>
-            <p className="mt-1 text-sm text-slate-500">Acepta PNG, JPG y WEBP.</p>
-          </div>
-        )}
-      </section>
-
-      {floorPlanUrl ? (
-        <section className="min-w-0 rounded-xl bg-white p-6 shadow-sm">
-          <div className="mb-5 flex items-center justify-between gap-4">
-            <div>
-              <h2 className="text-xl font-bold text-slate-900">Zonas y recorrido</h2>
-              <p className="mt-1 text-sm text-slate-500">
-                El orden de cada habitación se asigna automáticamente y se recalcula al eliminar zonas.
-              </p>
-            </div>
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700">
-              {zones.length} zonas
-            </span>
-          </div>
-
-          {zones.length ? (
-            <div className="space-y-3">
-              {[...zones]
-                .sort((first, second) => first.room_order - second.room_order)
-                .map((zone) => (
-                  <ZoneEditor key={zone.id} zone={zone} onSave={handleZoneUpdate} onDelete={handleZoneDelete} />
-                ))}
-            </div>
-          ) : (
-            <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-500">
-              Todavía no hay zonas. Haz clic sobre el plano para crear la primera habitación.
-            </p>
-          )}
-        </section>
+    <div className="space-y-4">
+      {error ? (
+        <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+          {error}
+        </p>
+      ) : message ? (
+        <p className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700" role="status">
+          {message}
+        </p>
       ) : null}
 
-      {message ? <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{message}</p> : null}
-      {error ? <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p> : null}
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+        <section className={cardClass}>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <h2 className="text-lg font-semibold text-[#0F172A]">Plano</h2>
+              <p className="mt-1 text-sm text-pretty text-[#6B7280]">
+                {floorPlanUrl
+                  ? "Haz clic en una zona vacía del plano para marcar una habitación. Arrástrala para moverla y haz doble clic para ajustar sus esquinas."
+                  : "Sube el plano de la vivienda para empezar a marcar las habitaciones."}
+              </p>
+            </div>
+            {floorPlanUrl ? (
+              <button
+                type="button"
+                onClick={() => imageInputRef.current?.click()}
+                disabled={isUploading}
+                className={`${buttonStyles.secondary} shrink-0 disabled:cursor-not-allowed disabled:opacity-60`}
+              >
+                {isUploading ? "Subiendo…" : "Cambiar plano"}
+              </button>
+            ) : null}
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className="hidden"
+              onChange={(event) => {
+                void handlePlanSelected(event.target.files?.[0]);
+                event.target.value = "";
+              }}
+            />
+          </div>
+
+          {floorPlanUrl ? (
+            <div className="mt-5 overflow-hidden rounded-xl border border-black/[0.06] bg-[#F1F1F1]">
+              <div
+                ref={containerRef}
+                className="relative w-full"
+                style={{ aspectRatio: `${STAGE_WIDTH} / ${STAGE_HEIGHT}` }}
+              >
+                {size.width > 0 && size.height > 0 ? (
+                  <FloorPlanCanvas
+                    size={size}
+                    planImage={planImage}
+                    zones={zones}
+                    selectedZoneId={selectedZoneId}
+                    editingZoneId={editingZoneId}
+                    onStageClick={handleCanvasStageClick}
+                    onSelectZone={handleZoneSelect}
+                    onEditZone={handleZoneEdit}
+                    onZonePointsChange={updateZonePointsLocally}
+                    onUpdateZonePoints={persistZonePoints}
+                  />
+                ) : null}
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => imageInputRef.current?.click()}
+              disabled={isUploading}
+              className="mt-5 flex w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#E5E7EB] bg-[#FAFAFA] px-6 py-16 text-center transition-colors hover:border-[#D4AF37] disabled:opacity-60"
+            >
+              <span className="text-base font-semibold text-[#0F172A]">
+                {isUploading ? "Subiendo plano…" : "Subir plano"}
+              </span>
+              <span className="mt-1 text-sm text-[#6B7280]">PNG, JPG o WEBP</span>
+            </button>
+          )}
+        </section>
+
+        {floorPlanUrl ? (
+          <section className={cardClass}>
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <h2 className="text-lg font-semibold text-[#0F172A]">Habitaciones</h2>
+                <p className="mt-1 text-sm text-pretty text-[#6B7280]">
+                  El video las recorre en este orden. Sube hasta 2 fotos de cada una.
+                </p>
+              </div>
+              <span className="shrink-0 rounded-full bg-[#F1F1F1] px-3 py-1 text-sm font-medium tabular-nums text-[#0F172A]">
+                {zones.length}
+              </span>
+            </div>
+
+            {sortedZones.length ? (
+              <div className="space-y-3">
+                {sortedZones.map((zone) => (
+                  <ZoneEditor key={zone.id} zone={zone} onSave={handleZoneUpdate} onDelete={handleZoneDelete} />
+                ))}
+              </div>
+            ) : (
+              <p className="rounded-xl bg-[#FAFAFA] p-4 text-sm text-[#6B7280]">
+                Todavía no hay habitaciones. Haz clic sobre el plano para marcar la primera.
+              </p>
+            )}
+
+            {sortedZones.length ? (
+              <Link href={`/properties/${propertyId}/video`} className={`${buttonStyles.primary} mt-5 w-full`}>
+                Siguiente: crear video
+              </Link>
+            ) : null}
+          </section>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -359,43 +419,88 @@ function ZoneEditor({
   onDelete: (zoneId: string) => Promise<void>;
 }) {
   const [name, setName] = useState(zone.name);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const isSaving = zone.id.startsWith("temp-");
 
   useEffect(() => {
     setName(zone.name);
   }, [zone.name]);
 
+  const commitName = () => {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      setName(zone.name);
+      return;
+    }
+    if (trimmed !== zone.name) {
+      void onSave(zone, trimmed);
+    }
+  };
+
+  const confirmDelete = async () => {
+    setDeleting(true);
+    try {
+      await onDelete(zone.id);
+    } finally {
+      setDeleting(false);
+      setConfirmOpen(false);
+    }
+  };
+
   return (
-    <div className="grid gap-3 rounded-xl border border-[#E5E7EB] bg-white p-4 md:grid-cols-[1fr_auto_auto] md:items-end">
-      <div>
-        <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">Nombre</label>
+    <div className="rounded-2xl border border-black/[0.06] bg-white p-4">
+      <div className="flex items-center gap-3">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0F172A] text-sm font-semibold text-white">
+          {zone.room_order}
+        </span>
         <input
+          aria-label="Nombre de la habitación"
           value={name}
+          disabled={isSaving}
           onChange={(event) => setName(event.target.value)}
-          className="w-full rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm outline-none focus:border-[#D4AF37]"
+          onBlur={commitName}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              event.currentTarget.blur();
+            }
+            if (event.key === "Escape") {
+              setName(zone.name);
+              event.currentTarget.blur();
+            }
+          }}
+          className="min-w-0 flex-1 rounded-xl border border-transparent bg-[#FAFAFA] px-3 py-2 text-base font-medium text-[#0F172A] outline-none transition hover:border-[#E5E7EB] focus:border-[#D4AF37] focus:bg-white focus:ring-2 focus:ring-[#D4AF37]/30 disabled:opacity-60"
         />
-      </div>
-      <div className="rounded-lg bg-slate-100 px-3 py-2 text-sm font-medium text-slate-700">
-        Orden: {zone.room_order}
-      </div>
-      <div className="flex gap-2">
         <button
           type="button"
-          onClick={() => onSave(zone, name)}
-          className="rounded-lg bg-[#111827] px-3 py-2 text-sm font-medium text-white transition hover:bg-[#1F2937]"
+          onClick={() => setConfirmOpen(true)}
+          disabled={isSaving}
+          aria-label={`Eliminar ${zone.name}`}
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#9CA3AF] transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
         >
-          Guardar
-        </button>
-        <button
-          type="button"
-          onClick={() => onDelete(zone.id)}
-          className="rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
-        >
-          Eliminar
+          <TrashIcon />
         </button>
       </div>
-      <div className="md:col-span-3">
-        <PropertyZonePhotos propertyId={zone.property_id} zoneId={zone.id} photos={zone.photos ?? []} />
+
+      <div className="mt-4">
+        {isSaving ? (
+          <p className="rounded-xl bg-[#FAFAFA] p-4 text-center text-xs text-[#9CA3AF]">Guardando habitación…</p>
+        ) : (
+          <PropertyZonePhotos propertyId={zone.property_id} zoneId={zone.id} photos={zone.photos ?? []} />
+        )}
       </div>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        busy={deleting}
+        title={`¿Eliminar «${zone.name}»?`}
+        description="Se quitará del plano y del recorrido del video, junto con sus fotos."
+        onConfirm={() => {
+          void confirmDelete();
+        }}
+        onCancel={() => setConfirmOpen(false)}
+      />
     </div>
   );
 }
