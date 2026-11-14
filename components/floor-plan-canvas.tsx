@@ -41,6 +41,12 @@ const FILL = "rgba(212, 175, 55, 0.16)";
 const FILL_SELECTED = "rgba(212, 175, 55, 0.30)";
 const LABEL_WIDTH = 220;
 
+// Distancia (en unidades del plano) a la que un punto se imanta a una línea guía
+const SNAP_DISTANCE = 10;
+
+type Guides = { x: number | null; y: number | null };
+const NO_GUIDES: Guides = { x: null, y: null };
+
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
 const normalizePoints = (points?: number[]) => {
@@ -77,6 +83,20 @@ function isRectangle(points: number[]): boolean {
   );
 }
 
+// Devuelve el valor imantado a la línea más cercana (si está dentro de la distancia) y la guía a dibujar.
+function snapValue(value: number, candidates: number[], threshold: number): { value: number; guide: number | null } {
+  let best: number | null = null;
+  let bestDistance = threshold;
+  for (const candidate of candidates) {
+    const distance = Math.abs(candidate - value);
+    if (distance <= bestDistance) {
+      bestDistance = distance;
+      best = candidate;
+    }
+  }
+  return best === null ? { value, guide: null } : { value: best, guide: best };
+}
+
 const createDefaultPolygonPoints = (pointerX: number, pointerY: number) => {
   const halfWidth = 80;
   const halfHeight = 55;
@@ -109,11 +129,13 @@ export default function FloorPlanCanvas({
   const [draggingSutureId, setDraggingSutureId] = useState<string | null>(null);
   const [dragOffsets, setDragOffsets] = useState<Record<string, { x: number; y: number }>>({});
   const [localPoints, setLocalPoints] = useState<Record<string, number[]>>({});
+  const [guides, setGuides] = useState<Guides>(NO_GUIDES);
   const dragOffsetsRef = useRef<Record<string, { x: number; y: number }>>({});
   const scaleX = size.width / STAGE_WIDTH;
   const scaleY = size.height / STAGE_HEIGHT;
   // Tamaño visual constante aunque el plano se vea pequeño (móvil)
   const handleScale = scaleX > 0 ? 1 / Math.max(scaleX, 0.35) : 1;
+  const snapThreshold = SNAP_DISTANCE * handleScale;
 
   const stageRef = useRef<any>(null);
   const lockTouchRef = useRef(false);
@@ -137,6 +159,22 @@ export default function FloorPlanCanvas({
     }
     previousZoneCount.current = zones.length;
   }, [zones.length]);
+
+  // Líneas a las que se puede imantar un punto: bordes del plano, esquinas de las otras habitaciones
+  // y esquinas de la propia habitación (salvo las que se están moviendo).
+  const getSnapTargets = (zoneId: string, ownPoints: number[], excludedVertices: number[]) => {
+    const xs: number[] = [0, STAGE_WIDTH];
+    const ys: number[] = [0, STAGE_HEIGHT];
+    for (const zone of zones) {
+      const zonePoints = zone.id === zoneId ? ownPoints : normalizePoints(zone.points);
+      for (let vertex = 0; vertex < zonePoints.length / 2; vertex += 1) {
+        if (zone.id === zoneId && excludedVertices.includes(vertex)) continue;
+        xs.push(zonePoints[vertex * 2]);
+        ys.push(zonePoints[vertex * 2 + 1]);
+      }
+    }
+    return { xs, ys };
+  };
 
   // Se usa onClick/onTap: solo se dispara con un toque limpio, no al deslizar el dedo para hacer scroll.
   const handleStageTap = (event: any) => {
@@ -267,19 +305,27 @@ export default function FloorPlanCanvas({
               {isEditing && points.map((point, index) => {
                 if (index % 2 !== 0) return null;
                 const handleVertexChange = (event: any, shouldSave: boolean) => {
-                  const nextX = clamp(event.target.x(), 0, STAGE_WIDTH);
-                  const nextY = clamp(event.target.y(), 0, STAGE_HEIGHT);
-                  const nextPoints = [...points];
                   const vertex = index / 2;
-                  nextPoints[index] = nextX;
-                  nextPoints[index + 1] = nextY;
+                  const rectangle = isRectangle(points);
+                  // En un rectángulo se mueven a la vez varias esquinas: no se imanta a ellas mismas.
+                  const excluded = rectangle ? [0, 1, 2, 3] : [vertex];
+                  const { xs, ys } = getSnapTargets(zone.id, points, excluded);
+                  const snappedX = snapValue(clamp(event.target.x(), 0, STAGE_WIDTH), xs, snapThreshold);
+                  const snappedY = snapValue(clamp(event.target.y(), 0, STAGE_HEIGHT), ys, snapThreshold);
+                  event.target.x(snappedX.value);
+                  event.target.y(snappedY.value);
+                  setGuides(shouldSave ? NO_GUIDES : { x: snappedX.guide, y: snappedY.guide });
+
+                  const nextPoints = [...points];
+                  nextPoints[index] = snappedX.value;
+                  nextPoints[index + 1] = snappedY.value;
                   // Habitación rectangular: al mover una esquina se mueven también las dos contiguas,
                   // para que siga siendo un rectángulo (como al redimensionar en un programa de diseño).
-                  if (isRectangle(points)) {
+                  if (rectangle) {
                     const sameX = [3, 2, 1, 0][vertex];
                     const sameY = [1, 0, 3, 2][vertex];
-                    nextPoints[sameX * 2] = nextX;
-                    nextPoints[sameY * 2 + 1] = nextY;
+                    nextPoints[sameX * 2] = snappedX.value;
+                    nextPoints[sameY * 2 + 1] = snappedY.value;
                   }
                   onZonePointsChange(zone.id, nextPoints);
                   if (shouldSave) onUpdateZonePoints(zone.id, nextPoints);
@@ -316,6 +362,21 @@ export default function FloorPlanCanvas({
                 // Otro punto intermedio en arrastre: se ocultan los demás para no confundir.
                 if (draggingSutureId && !isDraggingThis) return null;
 
+                const snapSuture = (event: any) => {
+                  const insertIndex = activeSutureInsertIndex.current;
+                  const basePoints = activeSuturePoints.current;
+                  if (insertIndex === null || !basePoints) return null;
+                  const { xs, ys } = getSnapTargets(zone.id, basePoints, [insertIndex / 2]);
+                  const snappedX = snapValue(clamp(event.target.x(), 0, STAGE_WIDTH), xs, snapThreshold);
+                  const snappedY = snapValue(clamp(event.target.y(), 0, STAGE_HEIGHT), ys, snapThreshold);
+                  event.target.x(snappedX.value);
+                  event.target.y(snappedY.value);
+                  const nextPoints = [...basePoints];
+                  nextPoints[insertIndex] = snappedX.value;
+                  nextPoints[insertIndex + 1] = snappedY.value;
+                  return { nextPoints, guides: { x: snappedX.guide, y: snappedY.guide } };
+                };
+
                 return (
                   <Circle
                     key={sutureId}
@@ -342,31 +403,24 @@ export default function FloorPlanCanvas({
                       setLocalPoints((current) => ({ ...current, [zone.id]: nextPoints }));
                     }}
                     onDragMove={(event: any) => {
-                      const insertIndex = activeSutureInsertIndex.current;
-                      if (insertIndex === null || !activeSuturePoints.current) return;
-
-                      const nextPoints = [...activeSuturePoints.current];
-                      nextPoints[insertIndex] = clamp(event.target.x(), 0, STAGE_WIDTH);
-                      nextPoints[insertIndex + 1] = clamp(event.target.y(), 0, STAGE_HEIGHT);
-                      activeSuturePoints.current = nextPoints;
-                      setLocalPoints((current) => ({ ...current, [zone.id]: nextPoints }));
+                      const result = snapSuture(event);
+                      if (!result) return;
+                      activeSuturePoints.current = result.nextPoints;
+                      setGuides(result.guides);
+                      setLocalPoints((current) => ({ ...current, [zone.id]: result.nextPoints }));
                     }}
                     onDragEnd={(event: any) => {
-                      const insertIndex = activeSutureInsertIndex.current;
-                      const nextPoints = activeSuturePoints.current
-                        ? [...activeSuturePoints.current]
-                        : [...points];
+                      const result = snapSuture(event);
+                      setGuides(NO_GUIDES);
 
-                      if (insertIndex !== null) {
-                        nextPoints[insertIndex] = clamp(event.target.x(), 0, STAGE_WIDTH);
-                        nextPoints[insertIndex + 1] = clamp(event.target.y(), 0, STAGE_HEIGHT);
+                      if (result) {
                         setLocalPoints((current) => {
                           const nextLocalPoints = { ...current };
                           delete nextLocalPoints[zone.id];
                           return nextLocalPoints;
                         });
-                        onZonePointsChange(zone.id, nextPoints);
-                        onUpdateZonePoints(zone.id, nextPoints);
+                        onZonePointsChange(zone.id, result.nextPoints);
+                        onUpdateZonePoints(zone.id, result.nextPoints);
                       }
 
                       activeSutureInsertIndex.current = null;
@@ -397,6 +451,25 @@ export default function FloorPlanCanvas({
             </Fragment>
           );
         })}
+
+        {guides.x !== null ? (
+          <Line
+            points={[guides.x, 0, guides.x, STAGE_HEIGHT]}
+            stroke={GOLD_DARK}
+            strokeWidth={1.5 * handleScale}
+            dash={[8 * handleScale, 6 * handleScale]}
+            listening={false}
+          />
+        ) : null}
+        {guides.y !== null ? (
+          <Line
+            points={[0, guides.y, STAGE_WIDTH, guides.y]}
+            stroke={GOLD_DARK}
+            strokeWidth={1.5 * handleScale}
+            dash={[8 * handleScale, 6 * handleScale]}
+            listening={false}
+          />
+        ) : null}
       </Layer>
     </Stage>
   );
