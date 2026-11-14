@@ -110,7 +110,8 @@ async function ensureTaxRate() {
   });
 }
 
-async function ensurePortalConfiguration() {
+// products: [{ product: "prod_...", prices: ["price_..."] }, ...]
+async function ensurePortalConfiguration(products) {
   const configs = await listAll((p) => stripe.billingPortal.configurations.list(p), { limit: 100 });
   const existing = configs.find((c) => c.metadata?.visitalo === "portal" && c.active);
   const features = {
@@ -123,6 +124,15 @@ async function ensurePortalConfiguration() {
       cancellation_reason: {
         enabled: true,
         options: ["too_expensive", "unused", "missing_features", "switched_service", "other"],
+      },
+    },
+    subscription_update: {
+      enabled: true,
+      default_allowed_updates: ["price"],
+      proration_behavior: "create_prorations",
+      products,
+      schedule_at_period_end: {
+        conditions: [{ type: "decreasing_item_amount" }],
       },
     },
   };
@@ -155,12 +165,12 @@ async function main() {
   const taxRate = await ensureTaxRate();
   console.log(`IVA: ${taxRate.percentage} % (${taxRate.inclusive ? "incluido" : "aparte"}) · ${taxRate.id}`);
 
-  const portal = await ensurePortalConfiguration();
-  console.log(`Portal de cliente: ${portal.id}`);
+  const portalProducts = [];
 
   for (const plan of PLANS) {
     const product = await ensureProduct(plan);
     const price = await ensurePrice(plan, product.id);
+
     const { data: updated, error } = await supabase
       .from("plans")
       .update({ stripe_price_id: price.id })
@@ -172,10 +182,17 @@ async function main() {
       );
       process.exit(1);
     }
+
+    portalProducts.push({ product: product.id, prices: [price.id] });
     console.log(
       `Plan ${plan.code}: producto ${product.id} · precio ${price.id} · ${(price.unit_amount / 100).toFixed(2)} €/mes sin IVA · lookup ${price.lookup_key}`
     );
   }
+
+  const portal = await ensurePortalConfiguration(portalProducts);
+  console.log(
+    `Portal de cliente: ${portal.id} · cambio de plan ${portal.features.subscription_update?.enabled ? "ACTIVADO" : "desactivado"}`
+  );
 
   const { data: plans, error: plansError } = await supabase
     .from("plans")

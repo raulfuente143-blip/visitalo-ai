@@ -73,7 +73,7 @@ export async function createCheckoutSession(formData: FormData) {
   const params: Stripe.Checkout.SessionCreateParams = {
     mode: "subscription",
     locale: "es",
-    line_items: [{ price: price.id, quantity: 1, tax_rates: [vatRateId] }],
+    line_items: [{ price: price.id, quantity: 1 }],
     billing_address_collection: "required",
     tax_id_collection: { enabled: true },
     custom_text: {
@@ -85,6 +85,7 @@ export async function createCheckoutSession(formData: FormData) {
     metadata: { agency_id: agencyId, plan_code: planCode },
     subscription_data: {
       metadata: { agency_id: agencyId, plan_code: planCode },
+      default_tax_rates: [vatRateId],
     },
     success_url: `${appUrl()}/billing?checkout=success`,
     cancel_url: `${appUrl()}/billing?checkout=cancelled`,
