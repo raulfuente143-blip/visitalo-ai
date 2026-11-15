@@ -22,9 +22,15 @@ export default async function ForgotPasswordPage({
         </p>
 
         {sent ? (
-          <p className="rounded-xl border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-4 py-3 text-sm text-[#F1E3A6]" role="status">
-            Si existe una cuenta con ese email, te hemos enviado un enlace. Revisa también la carpeta de spam.
-          </p>
+          <div className="rounded-xl border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-4 py-4 text-sm text-[#F1E3A6]" role="status">
+            <p className="font-semibold text-white">Revisa tu correo</p>
+            <p className="mt-1">
+              Si el email que has escrito tiene una cuenta en Visitalo.ai, te hemos enviado un enlace para crear una contraseña nueva. Puede tardar unos minutos; mira también en spam.
+            </p>
+            <Link href="/forgot-password" className="mt-3 inline-block font-medium text-[#D4AF37] hover:text-[#B8960C]">
+              ¿No te llega? Revisa el email y prueba de nuevo
+            </Link>
+          </div>
         ) : (
           <form action={requestPasswordReset} className="space-y-5">
             <div>
