@@ -2,7 +2,35 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { createServerComponentClient } from "@/lib/supabase/server";
+import {
+  LAST_ACTIVE_COOKIE,
+  SHORT_SESSION_COOKIE,
+  sessionCookieOptions,
+} from "@/lib/session-policy";
+
+function appUrl() {
+  return process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+}
+
+// Traduce los errores de Supabase Auth al español.
+function translateAuthError(message: string) {
+  const text = message.toLowerCase();
+  if (text.includes("invalid login credentials")) return "Email o contraseña incorrectos.";
+  if (text.includes("email not confirmed")) return "Confirma tu email antes de entrar.";
+  if (text.includes("already registered") || text.includes("already been registered")) {
+    return "Ya existe una cuenta con este email.";
+  }
+  if (text.includes("should be different")) return "La nueva contraseña debe ser distinta de la anterior.";
+  if (text.includes("password should be at least") || text.includes("weak")) {
+    return "La contraseña debe tener al menos 8 caracteres.";
+  }
+  if (text.includes("rate limit") || text.includes("too many")) {
+    return "Demasiados intentos. Espera unos minutos y vuelve a probar.";
+  }
+  return "No se ha podido completar la acción. Inténtalo de nuevo.";
+}
 
 function slugify(value: string) {
   return value
@@ -30,7 +58,7 @@ export async function signUp(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/register?error=${encodeURIComponent(error.message)}`);
+    redirect(`/register?error=${encodeURIComponent(translateAuthError(error.message))}`);
   }
 
   redirect("/dashboard");
@@ -39,6 +67,7 @@ export async function signUp(formData: FormData) {
 export async function signIn(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
+  const remember = formData.get("remember") === "on";
 
   if (!email || !password) {
     redirect("/login?error=Rellena+todos+los+campos");
@@ -51,7 +80,16 @@ export async function signIn(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/login?error=${encodeURIComponent(error.message)}`);
+    redirect(`/login?error=${encodeURIComponent(translateAuthError(error.message))}`);
+  }
+
+  const cookieStore = await cookies();
+  if (remember) {
+    cookieStore.delete(SHORT_SESSION_COOKIE);
+    cookieStore.delete(LAST_ACTIVE_COOKIE);
+  } else {
+    cookieStore.set(SHORT_SESSION_COOKIE, "1", sessionCookieOptions);
+    cookieStore.set(LAST_ACTIVE_COOKIE, String(Date.now()), sessionCookieOptions);
   }
 
   redirect("/dashboard");
@@ -257,7 +295,9 @@ export async function sendPasswordReset(): Promise<{ success: boolean; message: 
     return { success: false, message: "No se encontró el email de la cuenta." };
   }
 
-  const { error } = await supabase.auth.resetPasswordForEmail(user.email);
+  const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+    redirectTo: `${appUrl()}/auth/confirm?next=/reset-password`,
+  });
 
   if (error) {
     return { success: false, message: error.message };
@@ -269,5 +309,51 @@ export async function sendPasswordReset(): Promise<{ success: boolean; message: 
 export async function signOut() {
   const supabase = await createServerComponentClient();
   await supabase.auth.signOut();
+  const cookieStore = await cookies();
+  cookieStore.delete(SHORT_SESSION_COOKIE);
+  cookieStore.delete(LAST_ACTIVE_COOKIE);
   redirect("/login");
+}
+
+// Recuperar contraseña desde el inicio de sesión.
+// Por privacidad, siempre responde igual exista o no la cuenta.
+export async function requestPasswordReset(formData: FormData) {
+  const email = String(formData.get("email") ?? "").trim();
+
+  if (!email) {
+    redirect("/forgot-password?error=Escribe+tu+email");
+  }
+
+  const supabase = await createServerComponentClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${appUrl()}/auth/confirm?next=/reset-password`,
+  });
+
+  if (error && (error.status === 429 || error.message.toLowerCase().includes("rate limit"))) {
+    redirect(`/forgot-password?error=${encodeURIComponent(translateAuthError(error.message))}`);
+  }
+
+  redirect("/forgot-password?sent=1");
+}
+
+export async function updatePassword(formData: FormData) {
+  const password = String(formData.get("password") ?? "");
+  const confirm = String(formData.get("confirm") ?? "");
+
+  if (password.length < 8) {
+    redirect("/reset-password?error=La+contrase%C3%B1a+debe+tener+al+menos+8+caracteres");
+  }
+
+  if (password !== confirm) {
+    redirect("/reset-password?error=Las+contrase%C3%B1as+no+coinciden");
+  }
+
+  const supabase = await createServerComponentClient();
+  const { error } = await supabase.auth.updateUser({ password });
+
+  if (error) {
+    redirect(`/reset-password?error=${encodeURIComponent(translateAuthError(error.message))}`);
+  }
+
+  redirect("/dashboard");
 }
