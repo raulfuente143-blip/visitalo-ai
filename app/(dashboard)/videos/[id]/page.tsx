@@ -4,6 +4,8 @@ import Link from "next/link";
 import { use, useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Card, PageHeader, buttonStyles } from "@/components/panel-ui";
+import { DownloadVideoButton } from "@/components/download-video-button";
+import { MinimalVideoPlayer } from "@/components/minimal-video-player";
 
 type VideoStatus = "pending" | "processing" | "completed" | "failed";
 
@@ -34,15 +36,13 @@ function slugify(text: string) {
     .replace(/-+$/g, "");
 }
 
-function buildDownloadUrl(video: Video, property: PropertyInfo | null) {
+function buildFileName(video: Video, property: PropertyInfo | null) {
   if (!video.output_url) return null;
   const extension = video.output_url.split("?")[0].toLowerCase().endsWith(".webm") ? "webm" : "mp4";
   const date = video.created_at.slice(0, 10);
-  const place = slugify(property?.address || property?.name || "") || "propiedad";
+  const name = slugify(property?.name || property?.address || "") || "propiedad";
   const reference = property?.internal_reference ? slugify(property.internal_reference) : "";
-  const fileName = ["visitalo", reference, place, date].filter(Boolean).join("-") + `.${extension}`;
-  const separator = video.output_url.includes("?") ? "&" : "?";
-  return `${video.output_url}${separator}download=${encodeURIComponent(fileName)}`;
+  return ["visitalo", name, reference, date].filter(Boolean).join("-") + `.${extension}`;
 }
 
 export default function VideoStatusPage({ params }: { params: Promise<{ id: string }> }) {
@@ -129,25 +129,17 @@ export default function VideoStatusPage({ params }: { params: Promise<{ id: stri
     );
   }
 
-  const downloadUrl = buildDownloadUrl(video, property);
+  const fileName = buildFileName(video, property);
 
   return (
     <div className="mx-auto max-w-4xl">
       <PageHeader title="Video listo" description={description} action={backAction} />
       <section className="overflow-hidden rounded-2xl border border-black/[0.06] bg-black shadow-[0_1px_3px_rgba(15,23,42,0.04)]">
-        <video
-          src={video.output_url ?? undefined}
-          controls
-          autoPlay
-          playsInline
-          className="block aspect-video w-full bg-black"
-        />
+        {video.output_url ? <MinimalVideoPlayer src={video.output_url} /> : null}
       </section>
       <div className="mt-6 grid grid-cols-1 gap-3 sm:flex">
-        {downloadUrl ? (
-          <a href={downloadUrl} className={buttonStyles.dark}>
-            Descargar video
-          </a>
+        {video.output_url && fileName ? (
+          <DownloadVideoButton url={video.output_url} fileName={fileName} />
         ) : null}
         <Link href={`/properties/${video.property_id}/video`} className={buttonStyles.secondary}>
           Crear otro video
