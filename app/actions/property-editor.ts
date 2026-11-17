@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createServerComponentClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { groupStoragePaths } from "@/lib/storage-paths";
+import { groupPropertyStoragePaths, isOwnedStorageUrl } from "@/lib/storage-paths";
 
 async function getAuthenticatedProperty(propertyId: string) {
   const supabase = await createServerComponentClient();
@@ -50,8 +50,9 @@ async function getAuthenticatedProperty(propertyId: string) {
 
 // Borra de Storage los archivos que ya no usa nadie. Si falla, solo se registra:
 // el cambio que ha pedido el usuario ya está guardado.
-async function removeStorageFiles(urls: (string | null | undefined)[]) {
-  const byBucket = groupStoragePaths(urls);
+async function removeStorageFiles(propertyId: string, urls: (string | null | undefined)[]) {
+  // Solo se borran archivos de la carpeta de ESTA propiedad (auditoría C1).
+  const byBucket = groupPropertyStoragePaths(urls, propertyId);
   if (byBucket.size === 0) return;
 
   const admin = createAdminClient();
@@ -66,6 +67,9 @@ async function removeStorageFiles(urls: (string | null | undefined)[]) {
 export async function saveFloorPlan(propertyId: string, floorPlanUrl: string) {
   if (!floorPlanUrl) {
     throw new Error("La URL del plano es obligatoria");
+  }
+  if (!isOwnedStorageUrl(floorPlanUrl, "floor-plans", propertyId)) {
+    throw new Error("El archivo del plano no es válido. Vuelve a subirlo.");
   }
 
   const { supabase } = await getAuthenticatedProperty(propertyId);
@@ -86,7 +90,7 @@ export async function saveFloorPlan(propertyId: string, floorPlanUrl: string) {
   }
 
   if (current?.floor_plan_url && current.floor_plan_url !== floorPlanUrl) {
-    await removeStorageFiles([current.floor_plan_url]);
+    await removeStorageFiles(propertyId, [current.floor_plan_url]);
   }
 
   revalidatePath(`/properties/${propertyId}/editor`);
@@ -213,7 +217,7 @@ export async function deletePropertyZone(propertyId: string, zoneId: string) {
     }
   }
 
-  await removeStorageFiles((zonePhotos ?? []).map((photo: { url: string | null }) => photo.url));
+  await removeStorageFiles(propertyId, (zonePhotos ?? []).map((photo: { url: string | null }) => photo.url));
 
   revalidatePath(`/properties/${propertyId}/editor`);
 }
@@ -226,6 +230,9 @@ export async function savePropertyZonePhoto(
 ) {
   if (!url || ![1, 2].includes(photoSlot)) {
     throw new Error("La foto y el slot son obligatorios");
+  }
+  if (!isOwnedStorageUrl(url, "property-photos", propertyId)) {
+    throw new Error("El archivo de la foto no es válido. Vuelve a subirlo.");
   }
 
   const { supabase } = await getAuthenticatedProperty(propertyId);
@@ -268,7 +275,7 @@ export async function savePropertyZonePhoto(
   }
 
   if (previous?.url && previous.url !== url) {
-    await removeStorageFiles([previous.url]);
+    await removeStorageFiles(propertyId, [previous.url]);
   }
 
   revalidatePath(`/properties/${propertyId}/editor`);
@@ -299,7 +306,7 @@ export async function deletePropertyZonePhoto(
     throw new Error(error.message);
   }
 
-  await removeStorageFiles([photo?.url]);
+  await removeStorageFiles(propertyId, [photo?.url]);
 
   revalidatePath(`/properties/${propertyId}/editor`);
 }

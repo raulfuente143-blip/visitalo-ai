@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createServerComponentClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { parseStorageUrl } from "@/lib/storage-paths";
+import { isPropertyFile, parseStorageUrl } from "@/lib/storage-paths";
 
 export type CreateVideoResult =
   | { ok: true; videoId: string }
@@ -181,7 +181,7 @@ export async function deleteVideo(videoId: string): Promise<{ ok: true } | { ok:
   // Si el usuario puede leerlo, es de su agencia (lo garantizan las reglas de acceso).
   const { data: video } = await supabase
     .from("videos")
-    .select("id, output_url")
+    .select("id, property_id, output_url")
     .eq("id", videoId)
     .maybeSingle();
 
@@ -197,8 +197,13 @@ export async function deleteVideo(videoId: string): Promise<{ ok: true } | { ok:
     return { ok: false, error: "No se ha podido eliminar el video. Inténtalo de nuevo." };
   }
 
+  // Solo se borra el archivo si está en la carpeta de una propiedad de esta agencia (auditoría C1).
+  // Las reglas de acceso ocultan las propiedades de otras agencias, así que ownProperty sería null.
+  const { data: ownProperty } = video.property_id
+    ? await supabase.from("properties").select("id").eq("id", video.property_id).maybeSingle()
+    : { data: null };
   const file = parseStorageUrl(video.output_url);
-  if (file) {
+  if (ownProperty && isPropertyFile(file, ownProperty.id)) {
     const { error: storageError } = await admin.storage.from(file.bucket).remove([file.path]);
     if (storageError) {
       console.error("[deleteVideo] No se pudo borrar el archivo:", storageError.message);

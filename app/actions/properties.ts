@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createServerComponentClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { addStoragePath, groupStoragePaths } from "@/lib/storage-paths";
+import { addStoragePath, groupPropertyStoragePaths } from "@/lib/storage-paths";
 
 // Lista todos los archivos de una carpeta de Storage, entrando en subcarpetas (hasta 2 niveles).
 async function listFiles(
@@ -151,7 +151,8 @@ export async function deleteProperty(propertyId: string): Promise<DeleteResult> 
   if (propertyError) return failure;
 
   // 2) Archivos. Si alguno falla, se registra pero la propiedad ya está borrada.
-  const byBucket = groupStoragePaths(urls);
+  // Solo archivos de la carpeta de esta propiedad (auditoría C1).
+  const byBucket = groupPropertyStoragePaths(urls, propertyId);
 
   const leftoverFolders: [string, string][] = [
     ["property-videos", propertyId],

@@ -25,3 +25,39 @@ export function groupStoragePaths(urls: (string | null | undefined)[]) {
   }
   return map;
 }
+
+type StorageFile = { bucket: string; path: string };
+
+// Auditoría C1: un archivo solo "pertenece" a una propiedad si está dentro de su carpeta.
+// Así el servidor nunca borra archivos de otra propiedad o de otra agencia, aunque alguien
+// haya guardado una URL ajena en la base de datos.
+export function isPropertyFile(file: StorageFile | null, propertyId: string): file is StorageFile {
+  if (!file || !propertyId || file.path.includes("..")) return false;
+  switch (file.bucket) {
+    case "property-photos":
+    case "floor-plans":
+      return file.path.startsWith(`properties/${propertyId}/`);
+    case "property-videos":
+      return file.path.startsWith(`${propertyId}/`);
+    default:
+      return false;
+  }
+}
+
+// Solo acepta URLs públicas de NUESTRO Supabase, del bucket indicado y de la carpeta de la propiedad.
+export function isOwnedStorageUrl(url: string | null | undefined, bucket: string, propertyId: string) {
+  const base = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/$/, "");
+  if (!url || !base || !url.startsWith(`${base}${PUBLIC_MARKER}`)) return false;
+  const file = parseStorageUrl(url);
+  return file !== null && file.bucket === bucket && isPropertyFile(file, propertyId);
+}
+
+// Como groupStoragePaths, pero descartando todo lo que no sea de la carpeta de la propiedad.
+export function groupPropertyStoragePaths(urls: (string | null | undefined)[], propertyId: string) {
+  const map = new Map<string, Set<string>>();
+  for (const url of urls) {
+    const file = parseStorageUrl(url);
+    if (isPropertyFile(file, propertyId)) addStoragePath(map, file.bucket, file.path);
+  }
+  return map;
+}
