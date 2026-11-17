@@ -43,6 +43,14 @@ function slugify(value: string) {
     .slice(0, 60) || "agencia";
 }
 
+// El slug no se muestra en ningún sitio. Lleva siempre un sufijo aleatorio porque, por las
+// reglas de acceso, un usuario no puede ver las agencias de otros y no se pueden comprobar duplicados.
+function uniqueSlug(name: string) {
+  return `${slugify(name)}-${crypto.randomUUID().replace(/-/g, "").slice(0, 8)}`;
+}
+
+const AGENCY_SAVE_ERROR = "No se ha podido guardar la agencia. Inténtalo de nuevo.";
+
 export async function signUp(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
@@ -115,16 +123,7 @@ export async function completeOnboarding(formData: FormData) {
     redirect("/onboarding?error=El+nombre+de+la+agencia+es+obligatorio");
   }
 
-  let slug = slugify(name);
-  const { data: existingAgency } = await supabase
-    .from("agencies")
-    .select("id")
-    .eq("slug", slug)
-    .maybeSingle();
-
-  if (existingAgency) {
-    slug = `${slug}-${Math.random().toString(36).slice(2, 8)}`;
-  }
+  const slug = uniqueSlug(name);
 
   const rpcPayload = {
     p_name: name,
@@ -137,19 +136,13 @@ export async function completeOnboarding(formData: FormData) {
   const { data: agencyId, error: agencyError } = await supabase.rpc("create_agency_for_user", rpcPayload);
 
   if (agencyError || !agencyId) {
-    redirect(`/onboarding?error=${encodeURIComponent(agencyError?.message ?? "No+se+puedo+crear+la+agencia")}`);
+    redirect(`/onboarding?error=${encodeURIComponent(AGENCY_SAVE_ERROR)}`);
   }
 
   redirect("/dashboard");
 }
 
 export async function saveAgencyProfile(formData: FormData) {
-  console.log("[saveAgencyProfile] formData:", {
-    agencyName: formData.get("agencyName"),
-    logoUrl: formData.get("logoUrl"),
-    primaryColor: formData.get("primaryColor"),
-  });
-
   const supabase = await createServerComponentClient();
   const {
     data: { user },
@@ -157,7 +150,6 @@ export async function saveAgencyProfile(formData: FormData) {
   } = await supabase.auth.getUser();
 
   if (userError || !user) {
-    console.log("[saveAgencyProfile] Sin sesión:", userError?.message);
     redirect("/login");
   }
 
@@ -184,16 +176,7 @@ export async function saveAgencyProfile(formData: FormData) {
       .maybeSingle();
 
     if (!existingAgency) {
-      let slug = slugify(name);
-      const { data: duplicateAgency } = await supabase
-        .from("agencies")
-        .select("id")
-        .eq("slug", slug)
-        .maybeSingle();
-
-      if (duplicateAgency) {
-        slug = `${slug}-${Math.random().toString(36).slice(2, 8)}`;
-      }
+      const slug = uniqueSlug(name);
 
       const rpcPayload = {
         p_name: name,
@@ -206,7 +189,7 @@ export async function saveAgencyProfile(formData: FormData) {
       const { data: agencyId, error: agencyError } = await supabase.rpc("create_agency_for_user", rpcPayload);
 
       if (agencyError || !agencyId) {
-        redirect(`/settings?error=${encodeURIComponent(agencyError?.message ?? "No+se+puedo+crear+la+agencia")}`);
+        redirect(`/settings?error=${encodeURIComponent(AGENCY_SAVE_ERROR)}`);
       }
 
       revalidatePath("/dashboard");
@@ -225,26 +208,15 @@ export async function saveAgencyProfile(formData: FormData) {
       .eq("id", existingMembership.agency_id);
 
     if (error) {
-      redirect(`/settings?error=${encodeURIComponent(error.message)}`);
+      redirect(`/settings?error=${encodeURIComponent(AGENCY_SAVE_ERROR)}`);
     }
 
     revalidatePath("/dashboard");
     revalidatePath("/settings");
-    console.log("[saveAgencyProfile] Update exitoso, logo guardado:", logoUrl);
-    console.log("[saveAgencyProfile] Redirigiendo a personalización...");
     redirect("/settings?saved=true");
   }
 
-  let slug = slugify(name);
-  const { data: existingAgency } = await supabase
-    .from("agencies")
-    .select("id")
-    .eq("slug", slug)
-    .maybeSingle();
-
-  if (existingAgency) {
-    slug = `${slug}-${Math.random().toString(36).slice(2, 8)}`;
-  }
+  const slug = uniqueSlug(name);
 
   const rpcPayload = {
     p_name: name,
@@ -257,7 +229,7 @@ export async function saveAgencyProfile(formData: FormData) {
   const { data: agencyId, error: agencyError } = await supabase.rpc("create_agency_for_user", rpcPayload);
 
   if (agencyError || !agencyId) {
-    redirect(`/settings?error=${encodeURIComponent(agencyError?.message ?? "No+se+puedo+crear+la+agencia")}`);
+    redirect(`/settings?error=${encodeURIComponent(AGENCY_SAVE_ERROR)}`);
   }
 
   revalidatePath("/dashboard");
