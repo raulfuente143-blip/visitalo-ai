@@ -70,7 +70,7 @@ export default async function PropertyVideoPage({
   const zonesWithPhotos = zones.filter((zone) => zone.photos.length > 0);
   const photoCount = zonesWithPhotos.reduce((sum, zone) => sum + Math.min(zone.photos.length, 2), 0);
   const seconds = zonesWithPhotos.reduce((sum, zone) => sum + (zone.photos.length > 1 ? 4 : 3), 0);
-  const description = [property.name, property.address, property.internal_reference ? `Ref. ${property.internal_reference}` : null]
+  const description = [property.address, property.internal_reference ? `Ref. ${property.internal_reference}` : null]
     .filter(Boolean)
     .join(" · ");
 

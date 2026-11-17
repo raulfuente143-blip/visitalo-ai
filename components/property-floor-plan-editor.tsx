@@ -452,12 +452,17 @@ function ZoneEditor({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const isSaving = zone.id.startsWith("temp-");
+  const skipBlurRef = useRef(false);
 
   useEffect(() => {
     setName(zone.name);
   }, [zone.name]);
 
   const commitName = () => {
+    if (skipBlurRef.current) {
+      skipBlurRef.current = false;
+      return;
+    }
     const trimmed = name.trim();
     if (!trimmed) {
       setName(zone.name);
@@ -496,6 +501,7 @@ function ZoneEditor({
               event.currentTarget.blur();
             }
             if (event.key === "Escape") {
+              skipBlurRef.current = true;
               setName(zone.name);
               event.currentTarget.blur();
             }

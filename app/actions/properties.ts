@@ -45,6 +45,10 @@ export async function createProperty(formData: FormData) {
     redirect("/properties/new?error=La+direcci%C3%B3n+es+obligatoria");
   }
 
+  if (address.length > 200 || internalReference.length > 50) {
+    redirect(`/properties/new?error=${encodeURIComponent("La dirección admite hasta 200 caracteres y la referencia hasta 50.")}`);
+  }
+
   const { data: agencyMember } = await supabase
     .from("agency_members")
     .select("agency_id")
@@ -70,7 +74,7 @@ export async function createProperty(formData: FormData) {
     .single();
 
   if (error || !data?.id) {
-    redirect(`/properties/new?error=${encodeURIComponent(error?.message ?? "No+se+puedo+crear+la+propiedad")}`);
+    redirect(`/properties/new?error=${encodeURIComponent("No se ha podido crear la propiedad. Inténtalo de nuevo.")}`);
   }
 
   redirect(`/properties/${data.id}/editor`);
@@ -170,5 +174,59 @@ export async function deleteProperty(propertyId: string): Promise<DeleteResult> 
   revalidatePath("/properties");
   revalidatePath("/videos");
   revalidatePath("/dashboard");
+  return { ok: true };
+}
+
+// Edita la dirección y la referencia de una propiedad. El nombre se recalcula a partir de la
+// dirección, igual que al crearla. Las reglas de acceso (RLS) impiden tocar propiedades ajenas.
+export async function updatePropertyDetails(
+  propertyId: string,
+  input: { address: string; internalReference: string },
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const supabase = await createServerComponentClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { ok: false, error: "Tu sesión ha caducado. Vuelve a iniciar sesión." };
+  }
+
+  const address = String(input?.address ?? "").trim();
+  const internalReference = String(input?.internalReference ?? "").trim();
+
+  if (!address) {
+    return { ok: false, error: "La dirección es obligatoria." };
+  }
+  if (address.length > 200) {
+    return { ok: false, error: "La dirección no puede tener más de 200 caracteres." };
+  }
+  if (internalReference.length > 50) {
+    return { ok: false, error: "La referencia no puede tener más de 50 caracteres." };
+  }
+
+  const name = address.length > 80 ? `${address.slice(0, 77)}...` : address;
+
+  const { data, error } = await supabase
+    .from("properties")
+    .update({
+      name,
+      address,
+      internal_reference: internalReference || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", propertyId)
+    .select("id")
+    .maybeSingle();
+
+  if (error || !data) {
+    return { ok: false, error: "No se han podido guardar los cambios. Inténtalo de nuevo." };
+  }
+
+  revalidatePath("/properties");
+  revalidatePath(`/properties/${propertyId}/editor`);
+  revalidatePath(`/properties/${propertyId}/video`);
+  revalidatePath("/videos");
   return { ok: true };
 }

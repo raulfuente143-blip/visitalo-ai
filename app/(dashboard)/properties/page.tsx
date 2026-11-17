@@ -1,5 +1,5 @@
 import { createServerComponentClient } from "@/lib/supabase/server";
-import { DeletePropertyButton } from "@/components/delete-property-button";
+import { PropertyRowMenu } from "@/components/property-row-menu";
 import { redirect } from "next/navigation";
 import { PageHeader, buttonStyles } from "@/components/panel-ui";
 
@@ -94,7 +94,11 @@ export default async function PropertiesPage() {
                     <a href={`/properties/${property.id}/video`} className={`${buttonStyles.secondary} flex-1`}>
                       Crear video
                     </a>
-                    <DeletePropertyButton propertyId={property.id} />
+                    <PropertyRowMenu
+                      propertyId={property.id}
+                      address={property.address}
+                      internalReference={property.internal_reference}
+                    />
                   </div>
                 </li>
               ))}
@@ -134,7 +138,11 @@ export default async function PropertiesPage() {
                           <a href={`/properties/${property.id}/video`} className={buttonStyles.secondary}>
                             Crear video
                           </a>
-                          <DeletePropertyButton propertyId={property.id} />
+                          <PropertyRowMenu
+                            propertyId={property.id}
+                            address={property.address}
+                            internalReference={property.internal_reference}
+                          />
                         </div>
                       </td>
                     </tr>

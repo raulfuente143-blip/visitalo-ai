@@ -2,7 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createServerComponentClient } from "@/lib/supabase/server";
 import { PropertyFloorPlanEditor } from "@/components/property-floor-plan-editor";
-import { PageHeader, buttonStyles } from "@/components/panel-ui";
+import { buttonStyles } from "@/components/panel-ui";
+import { EditablePropertyHeader } from "@/components/editable-property-header";
 
 export default async function PropertyEditorPage({
   params,
@@ -51,15 +52,12 @@ export default async function PropertyEditorPage({
     photos: (zonePhotos ?? []).filter((photo) => photo.zone_id === zone.id),
   }));
 
-  const description = [property.address, property.internal_reference ? `Ref. ${property.internal_reference}` : null]
-    .filter(Boolean)
-    .join(" · ");
-
   return (
     <div className="mx-auto max-w-7xl">
-      <PageHeader
-        title={property.name || "Propiedad"}
-        description={description}
+      <EditablePropertyHeader
+        propertyId={property.id}
+        address={property.address}
+        internalReference={property.internal_reference}
         action={
           <div className="grid grid-cols-2 gap-3 sm:flex">
             <Link href="/properties" className={buttonStyles.secondary}>

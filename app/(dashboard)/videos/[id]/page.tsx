@@ -83,7 +83,9 @@ export default function VideoStatusPage({ params }: { params: Promise<{ id: stri
   }, [id]);
 
   const property = video ? (Array.isArray(video.properties) ? video.properties[0] ?? null : video.properties) : null;
-  const description = [property?.name, property?.address].filter(Boolean).join(" · ");
+  const description = [property?.address, property?.internal_reference ? `Ref. ${property.internal_reference}` : null]
+    .filter(Boolean)
+    .join(" · ");
   const backAction = (
     <Link href="/videos" className={`${buttonStyles.secondary} w-full sm:w-auto`}>
       Todos los videos
